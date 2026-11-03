@@ -36,7 +36,7 @@ public static class PreviewUi
             }
             var settings=new FxSettings { LookEditor=true };
             int changes=0, tests=0; bool canTest=true;
-            var hooks=new SettingsModel.Hooks { Version="1.1.0", Changed=()=>changes++, Close=()=>{ }, Reset=()=>settings.CopyFrom(new FxSettings()), CanTest=()=>canTest, Test=k=>{ tests++; return true; },
+            var hooks=new SettingsModel.Hooks { Version="1.1.1", Changed=()=>changes++, Close=()=>{ }, Reset=()=>settings.CopyFrom(new FxSettings()), CanTest=()=>canTest, Test=k=>{ tests++; return true; },
                 Status=()=>"Settings saved", HasMod=names=>Array.Exists(names,n=>n=="Waterfall"||n=="Scatterer"||n=="EVEManager"||n=="BDArmory"||n=="GroundBlastFx"||n=="BlastFX") };
             var font=Resources.GetBuiltinResource<Font>("Arial.ttf");
             var panel=new SettingsPanel(SettingsModel.Build(settings,hooks),font,camera,1);

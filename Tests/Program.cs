@@ -675,6 +675,21 @@ class Program
                     var nukeFar=VolumeEvolution.Evaluate(ringNuke,40,true,true,true,false,ringNukeLayout);
                     Check(nukeShock.X==nukeWave.ShockRadius&&nukeShock.Y>0&&VolumeEvolution.ShockRimGain(nukeWave)>0&&nukeHaze.X==0&&!VolumeEvolution.DistortionVisible(nukeFar,0),
                         "A nuclear blast's wave in the air is the 1.0 ring too, on its front, gone past its reach (no shimmer pass)");
+                    // The biggest bombs differ: 1 Mt, 10 Mt and the 50 Mt Tsar Bomba (all were drawn alike above ~3.5 Mt).
+                    double[] tops=new double[3], radii=new double[3]; double[] yields={1e9,1e10,5e10};
+                    for(int k=0;k<3;k++){ var yp=new FxPlan{ Atmosphere=1, Kind=EventKind.GroundImpact, Look=LookProfile.Default(LookKind.Tank) }; Warhead.Apply(yp,new WarheadInfo{ Kind=WarheadKind.Nuke, TntKg=yields[k], RangeM=5000 });
+                        tops[k]=BlastLayout.Create(yp,new Vec3(),true,false,77,null).NukeTop; radii[k]=VolumeEvolution.FireballRadius(yp); }
+                    Check(tops[0]<tops[1]&&tops[1]<tops[2]&&tops[2]>44000&&tops[2]<=55000&&radii[0]<radii[1]&&radii[1]<radii[2]&&
+                        NukeCloud.CapShare(5e4)*tops[2]>2*NukeCloud.CapShare(1e3)*tops[0]&&NukeCloud.CapShare(500)==0.3,
+                        "1 Mt, 10 Mt and 50 Mt bursts grow apart: the Tsar Bomba's cloud climbs to about 48 km and spreads twice as wide (smaller yields unchanged)");
+                    var tsarP=new FxPlan{ Atmosphere=1, Kind=EventKind.GroundImpact, Look=LookProfile.Default(LookKind.Tank) }; Warhead.Apply(tsarP,new WarheadInfo{ Kind=WarheadKind.Nuke, TntKg=5e10, RangeM=11500 });
+                    var mtOnly=new FxPlan{ Atmosphere=1, Kind=EventKind.GroundImpact, Look=LookProfile.Default(LookKind.Tank) }; Warhead.Apply(mtOnly,new WarheadInfo{ Kind=WarheadKind.Nuke, TntKg=1e9, RangeM=5000 });
+                    Check(VolumeEvolution.NukeBlastReach(tsarP)>60000&&Math.Abs(VolumeEvolution.NukeBlastReach(mtOnly)-12000)<1,
+                        "The Tsar Bomba's blast wave races out for tens of kilometres; a megaton's stays as before");
+                    var saverSettings=new FxSettings(); saverSettings.LowMemory=7; saverSettings.Validate();
+                    Check(FxSettings.SavesMemory(0,4096)&&FxSettings.SavesMemory(0,2048)&&!FxSettings.SavesMemory(0,8192)&&!FxSettings.SavesMemory(0,0)&&
+                        FxSettings.SavesMemory(1,16384)&&!FxSettings.SavesMemory(2,2048)&&saverSettings.LowMemory==2,
+                        "The video memory saver is on by itself below 6 GB, always when chosen, never when turned off");
                     var nukeWide=VolumeEvolution.Evaluate(ringNuke,8,true,true,true,false,ringNukeLayout);
                     Check(VolumeEvolution.RingOutOfView(nukeWide,600,1.2)&&!VolumeEvolution.RingOutOfView(nukeWide,20000,1.2)&&!VolumeEvolution.RingOutOfView(waveLate,1,1.2),
                         "A nuclear ring that has swept past the edges of the view is no longer drawn (an ordinary ring always is)");
@@ -714,6 +729,16 @@ class Program
                     Func<WarheadKind,double,double> warheadSize=(kind,kg)=>{ var wp=new FxPlan{ Atmosphere=1, Kind=EventKind.Destruction, Look=LookProfile.Default(LookKind.Atmospheric) }; Warhead.Apply(wp,new WarheadInfo{ Kind=kind, TntKg=kg, RangeM=50 }); return VolumeEvolution.FireballRadius(wp); };
                     double nukeSmall=warheadSize(WarheadKind.Nuke,1.5e6), nukeBig=warheadSize(WarheadKind.Nuke,100e6), missile=warheadSize(WarheadKind.HighExplosive,25), bomb=warheadSize(WarheadKind.Bomb,450);
                     Check(nukeBig>2.5*nukeSmall&&nukeSmall>50&&bomb>2.5*missile&&missile>8,"Warheads scale with their power: a 100 kt nuke dwarfs a 1.5 kt one, a 450 kg bomb a 25 kg missile");
+                    Func<double,bool,double> fuelBall=(kg,modern)=>VolumeEvolution.FireballRadius(new FxPlan{ Atmosphere=1, Kind=EventKind.GroundImpact, BurnableKg=kg, Look=modern?LookProfile.Default(LookKind.Tank):LookProfile.Classic() });
+                    Check(fuelBall(2e6,true)>200&&fuelBall(2e6,true)<=VolumeEvolution.ModernCap&&fuelBall(2e5,true)>fuelBall(2e4,true)*1.9&&fuelBall(2e6,false)==60&&
+                        warheadSize(WarheadKind.Bomb,8500)>100&&warheadSize(WarheadKind.Bomb,44000)>warheadSize(WarheadKind.Bomb,8500),
+                        "A heavy launcher's fuel fireball and the biggest bombs keep growing past the old 60 m and 95 m caps (1.0 look unchanged)");
+                    var fuelClusters=new EventClusterer();
+                    int fuelId=fuelClusters.Add(new DestructionEvent(Part(1,instance:11),EventKind.GroundImpact,4),5,30000);
+                    fuelClusters.Add(new DestructionEvent(Part(1,instance:12),EventKind.GroundImpact,4.01),6,50000);
+                    var fuelCluster=fuelClusters.TakeReady(4.2);
+                    Check(fuelId>0&&Math.Abs(fuelCluster.BurnableKg-80000)<1e-6&&VisualEnergy.Combined(50000,fuelCluster.BurnableKg)==80000&&VisualEnergy.Combined(50000,0)==50000,
+                        "Tanks bursting together burn their fuel in one fireball");
                     var nukePlan=new FxPlan{ Atmosphere=1, Kind=EventKind.GroundImpact, Look=LookProfile.Default(LookKind.Tank) }; Warhead.Apply(nukePlan,new WarheadInfo{ Kind=WarheadKind.Nuke, TntKg=20e6, RangeM=900 });
                     var nukeLayout=BlastLayout.Create(nukePlan,new Vec3(),true,false,77,null);
                     var nukeEarly=VolumeEvolution.Evaluate(nukePlan,0.3,true,true,true,false,nukeLayout); var nukeLate=VolumeEvolution.Evaluate(nukePlan,15,true,true,true,false,nukeLayout);

@@ -7,6 +7,8 @@ namespace VolumetricExplosionFX.Core
         public DestructionEvent Representative;
         public Vec3 Position;
         public double FirstTime, LastTime, TotalScore, RepresentativeScore;
+        // Propellant of all the parts that broke up together (kg): their fuel burns in one fireball, not the strongest part's alone.
+        public double BurnableKg;
         public bool Ground;
         public Vec3 GroundPoint;
         double groundScore;
@@ -54,7 +56,7 @@ namespace VolumetricExplosionFX.Core
         public int LastEvicted { get; private set; }
         public EventClusterer(int capacity=24, double window=0.08, double radius=12)
         { if(capacity<1||window<=0||radius<=0) throw new ArgumentOutOfRangeException(); slots=new EventCluster[capacity]; this.window=window; this.radius=radius; }
-        public int Add(DestructionEvent e, double score)
+        public int Add(DestructionEvent e, double score, double burnableKg=0)
         {
             int free=-1, weakest=-1; LastEvicted=0;
             for(int i=0;i<slots.Length;i++)
@@ -67,7 +69,7 @@ namespace VolumetricExplosionFX.Core
                    (e.Part.Position-c.Position).Length<=radius)
                 {
                     c.Position=(c.Position*c.Members+e.Part.Position)*(1.0/(c.Members+1));
-                    c.Members++; c.LastTime=e.Time; c.TotalScore=Numbers.Clamp(c.TotalScore+score,0,100);
+                    c.Members++; c.LastTime=e.Time; c.TotalScore=Numbers.Clamp(c.TotalScore+score,0,100); c.BurnableKg+=Math.Max(burnableKg,0);
                     if(score>c.RepresentativeScore)
                     {
                         c.Sample(c.Representative.Origin,c.Representative.Time,c.RepresentativeScore);
@@ -83,7 +85,7 @@ namespace VolumetricExplosionFX.Core
                 if(weakest<0||score<=slots[weakest].RepresentativeScore) { Dropped++; return 0; }
                 free=weakest; Replaced++; LastEvicted=slots[weakest].Id;
             }
-            slots[free]=new EventCluster { Id=++nextId, Members=1, Representative=e, Position=e.Part.Position, FirstTime=e.Time, LastTime=e.Time, TotalScore=score, RepresentativeScore=score };
+            slots[free]=new EventCluster { Id=++nextId, Members=1, Representative=e, Position=e.Part.Position, FirstTime=e.Time, LastTime=e.Time, TotalScore=score, RepresentativeScore=score, BurnableKg=Math.Max(burnableKg,0) };
             slots[free].Note(e,score);
             return slots[free].Id;
         }

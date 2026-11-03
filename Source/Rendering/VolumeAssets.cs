@@ -27,7 +27,24 @@ namespace VolumetricExplosionFX.Rendering
         Texture2D blueNoise;
         internal Texture3D Noise { get { return noise; } }
         internal string Status="disabled";
-        internal VolumeAssets(bool volumetric)
+        // The bundle beside this DLL (Plugins/../Assets) first: a mod copied one folder too deep (GameData/GameData/...)
+        // still loads its DLL, and looking only under the game's GameData left it with the plain particles.
+        static string BundlePath(string platform)
+        {
+            string file="vefx-"+platform+".unity3d";
+            try
+            {
+                string plugins=Path.GetDirectoryName(typeof(VolumeAssets).Assembly.Location);
+                string beside=Path.Combine(Path.Combine(Path.GetDirectoryName(plugins),"Assets"),file);
+                if(File.Exists(beside)) return beside;
+            }
+            catch(Exception) { }
+            string usual=Path.Combine(KSPUtil.ApplicationRootPath,"GameData/VolumetricExplosionFX/Assets/"+file);
+            return File.Exists(usual)?usual:null;
+        }
+        // saveMemory (video memory saver): only the first ground and air runs and two nuclear ones (about 110 MB of video
+        // memory less): the extra runs only add variety, and a 1 GB card crashed reloading them on the next scene.
+        internal VolumeAssets(bool volumetric,bool saveMemory=false)
         {
             GraphicsDeviceType api=SystemInfo.graphicsDeviceType;
             if(api!=GraphicsDeviceType.Direct3D11 && api!=GraphicsDeviceType.OpenGLCore && api!=GraphicsDeviceType.Metal)
@@ -35,8 +52,8 @@ namespace VolumetricExplosionFX.Rendering
             string platform=Application.platform==RuntimePlatform.WindowsPlayer?"windows":
                 Application.platform==RuntimePlatform.OSXPlayer?"mac":null;
             if(platform==null) { Status="unsupported platform; particles";return; }
-            string path=Path.Combine(KSPUtil.ApplicationRootPath,"GameData/VolumetricExplosionFX/Assets/vefx-"+platform+".unity3d");
-            if(!File.Exists(path)) { Status="missing "+platform+" bundle; particles";return; }
+            string path=BundlePath(platform);
+            if(path==null) { Status="missing "+platform+" bundle; particles";return; }
             AssetBundle bundle=null;
             try
             {
@@ -59,12 +76,12 @@ namespace VolumetricExplosionFX.Rendering
                 {
                     Material.SetTexture("_FireSimGround",simGround); Material.SetTexture("_FireSimAir",simAir);
                     // More baked runs (variety): explosions draw them only when they loaded.
-                    var simGround2=bundle.LoadAsset<Texture3D>("Assets/FireSim/FireSim_ground2.asset");
-                    var simGround3=bundle.LoadAsset<Texture3D>("Assets/FireSim/FireSim_ground3.asset");
-                    var simGround4=bundle.LoadAsset<Texture3D>("Assets/FireSim/FireSim_ground4.asset");
-                    var simAir2=bundle.LoadAsset<Texture3D>("Assets/FireSim/FireSim_air2.asset");
+                    var simGround2=saveMemory?null:bundle.LoadAsset<Texture3D>("Assets/FireSim/FireSim_ground2.asset");
+                    var simGround3=saveMemory?null:bundle.LoadAsset<Texture3D>("Assets/FireSim/FireSim_ground3.asset");
+                    var simGround4=saveMemory?null:bundle.LoadAsset<Texture3D>("Assets/FireSim/FireSim_ground4.asset");
+                    var simAir2=saveMemory?null:bundle.LoadAsset<Texture3D>("Assets/FireSim/FireSim_air2.asset");
                     var simNuke=bundle.LoadAsset<Texture3D>("Assets/FireSim/FireSim_nuke.asset");
-                    var simNuke2=bundle.LoadAsset<Texture3D>("Assets/FireSim/FireSim_nuke2.asset");
+                    var simNuke2=saveMemory?null:bundle.LoadAsset<Texture3D>("Assets/FireSim/FireSim_nuke2.asset");
                     var simNukeAir=bundle.LoadAsset<Texture3D>("Assets/FireSim/FireSim_nukeair.asset");
                     FireSim.NukeHave[0]=simNuke!=null; FireSim.NukeHave[1]=simNuke2!=null; FireSim.NukeHave[2]=simNukeAir!=null;
                     FireSim.GroundLoaded=simGround2==null?1:simGround3==null||simGround4==null?2:4;

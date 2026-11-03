@@ -14,8 +14,9 @@ namespace VolumetricExplosionFX.Core
             double power=Math.Pow(Numbers.Clamp((score-2.8)/5.5,0,1),1.3);
             double near=Math.Max((nuclear?12:7)*dome,18);
             double fall=distance<=near?1:Math.Pow(near/distance,nuclear?1.05:1.25);
-            double a=2.3*power*fall*Math.Sqrt(Numbers.Clamp(air,0,1))*(nuclear?1.6:1);   // brutal pass: a harder jolt
-            return a<0.015?0:Math.Min(a,nuclear?4.5:3.2);
+            double mega=nuclear?Mega(dome):0;   // (megatons: a harder jolt still)
+            double a=2.3*power*fall*Math.Sqrt(Numbers.Clamp(air,0,1))*(nuclear?1.6*(1+0.6*mega):1);   // brutal pass: a harder jolt
+            return a<0.015?0:Math.Min(a,nuclear?4.5*(1+0.5*mega):3.2);
         }
         // Seconds before the jolt reaches the camera.
         public static double Arrival(double distance,double air) { return Math.Max(distance,0)/Speed(air); }
@@ -24,7 +25,10 @@ namespace VolumetricExplosionFX.Core
         public static double Speed(double air) { return Math.Max(340*Math.Sqrt(Numbers.Clamp(air,0.02,1)),50); }
         // How long it rumbles (s).
         // (a nuclear blast rumbles on a little longer; 2.8 s, 4.5 s was too long)
-        public static double Duration(double score,bool nuclear=false) { return nuclear?2.8:Numbers.Clamp(0.5+0.18*score,0.6,2.4); }
+        // (megatons a little longer: 4 s for the Tsar Bomba)
+        public static double Duration(double score,bool nuclear=false,double dome=0) { return nuclear?2.8*(1+0.45*Mega(dome)):Numbers.Clamp(0.5+0.18*score,0.6,2.4); }
+        // How far into the megatons a nuclear blast is, from its dome (m): 0 up to about 1 Mt (1200 m), 1 at the 3600 m cap.
+        static double Mega(double dome) { return Numbers.Clamp((dome-1200)/2400,0,1); }
         // Envelope (0..1) t seconds after arrival: a sharp jolt that dies down.
         public static double Envelope(double t,double duration)
         {

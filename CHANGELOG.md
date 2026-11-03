@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.1.1 — 2026-11-03
+
+A fix-up release after the feedback on 1.1. Thanks to everyone who sent logs!
+
+### Fixed
+- Black screen and crashes when changing scene on graphics cards with little video memory (4 GB laptops, integrated
+  graphics). There is a new "Video memory saver" option on the Performance page. It turns on by itself below 6 GB: it
+  loads less fire simulation data, draws the fireballs at a lower resolution and skips a couple of full-screen copies.
+  If the card still runs out of memory, the fireballs keep showing instead of the screen going black.
+- Only smoke, no fireballs, when the mod was installed one folder too deep (`GameData/GameData/...`). It now finds its
+  files either way.
+- A pale box could show on the stem of a big nuclear mushroom where the condensation rings were cut off. They now fade
+  out softly.
+
+### Changed
+- Big crashes are bigger. When several tanks blow up together, all their fuel now goes into one fireball instead of
+  only the largest tank's, and the old size limits (60 m for a crash, 95 m for a bomb) are gone. A fully fuelled heavy
+  launcher can now make a fireball a few hundred metres wide.
+- Multi-megaton bombs look the part. The cloud is wider and a bit lower, the stem and the dust at its foot are thicker,
+  it climbs faster, and the blast wave goes twice as far and hits harder (stronger camera shake, a taller wall of dust).
+  Bombs under a megaton are unchanged.
+- The Tsar Bomba from North Kerbin Dynamics now always goes off as a 50 Mt nuke when it hits the ground, even when its
+  part config doesn't load its nuke module.
+
 ## 1.1.0 — Visual Overhaul — 2026-10-19
 
 Almost everything you see has been redone: fireballs, smoke, shock waves, ground fires, wreckage, water impacts, nuclear

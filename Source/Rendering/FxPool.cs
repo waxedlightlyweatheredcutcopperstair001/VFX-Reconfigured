@@ -41,7 +41,7 @@ namespace VolumetricExplosionFX.Rendering
         {
             settings=s;
             CameraRig.Setup();
-            volumes=new VolumeAssets(s.Volumetric); assets=new ProceduralAssets(volumes.Particle,volumes.Debris); slots=new FxInstance[s.MaxEvents];
+            volumes=new VolumeAssets(s.Volumetric,FxSettings.SavesMemory(s.LowMemory,VideoMemory)); assets=new ProceduralAssets(volumes.Particle,volumes.Debris); slots=new FxInstance[s.MaxEvents];
             lightPriority=new double[slots.Length]; lightChosen=new bool[slots.Length]; lightOrder=new int[slots.Length];
             debris=new DebrisField(s,volumes,assets.Glow);
             hits=new HitBursts(assets);
@@ -57,33 +57,46 @@ namespace VolumetricExplosionFX.Rendering
                 catch(Exception ex) { slots[0].Clear(); Debug.LogWarning("[VEFX] Particle warm-up skipped: "+ex.GetType().Name); }
             }
             Camera.onPreCull+=OnPreCull; hooked=true;
+            Debug.Log("[VEFX] Video memory "+VideoMemory+" MB; memory saver "+(SavesMemory?"on":"off")+(s.LowMemory==0?" (automatic)":""));
         }
-        bool hooked;
+        bool hooked, memoryFailureLogged;
         LowResVolumes lowRes;
+        // Video memory saver: chosen in the settings, automatic on cards with little memory, or forced by a failed image.
+        internal static int VideoMemory { get { return SystemInfo.graphicsMemorySize; } }
+        internal bool SavesMemory { get { return FxSettings.SavesMemory(settings.LowMemory,VideoMemory)||(lowRes!=null&&lowRes.Failures>0); } }
         readonly PlumeOverlays plumes=new PlumeOverlays();   // engine flames drawn again over the clouds in front of them
         void OnPreCull(Camera cam)
         {
             CameraRig.SetRenderRange(cam);
             LowResVolumes target=null;
+            bool begun=false;
             bool flight=CameraRig.IsFlight(cam);
-            if(lowRes!=null&&flight)
+            bool saver=SavesMemory;
+            if(lowRes!=null&&!lowRes.Available&&!memoryFailureLogged)
+            {
+                memoryFailureLogged=true;
+                Debug.LogWarning("[VEFX] Video memory full: the graphics card could not make the volumes' image; volumes now drawn without it, video memory saver on");
+            }
+            if(lowRes!=null&&flight&&lowRes.Available)
             {
                 // The 1.1 simulated fireball marches four times finer at one step lower resolution (same cost): its billows
                 // need short steps (coarse steps showed as grain and banding), and a soft volume loses little at half size.
                 bool sim=VolumeEvolution.UseSim&&!settings.Looks.UseClassic;
-                lowRes.Overlays=plumes.Renderers; lowRes.OverlayBox=volumes.Cube;
+                // (the saver skips the full-screen copies: flames drawn again over the clouds, the cloud masking)
+                lowRes.Overlays=saver?null:plumes.Renderers; lowRes.OverlayBox=volumes.Cube;
                 // Hidden behind EVE's cloud layers where they lie between the eye and the cloud.
                 CelestialBody body=FlightGlobals.currentMainBody;
                 CloudLayers.Refresh(body);
-                lowRes.CloudOcclusion=CloudLayers.Known&&body!=null&&settings.Volumetric;
+                lowRes.CloudOcclusion=CloudLayers.Known&&body!=null&&settings.Volumetric&&!saver;
                 if(lowRes.CloudOcclusion) { Vector3 c=body.position; lowRes.CloudBands=CloudLayers.Bands; lowRes.Planet=new Vector4(c.x,c.y,c.z,(float)body.Radius); }
                 lowRes.ShowProbe(cam,lowRes.CloudOcclusion);
-                lowRes.Begin(cam,VolumeEvolution.MarchDivisor(settings.VolumeDivisor,sim)); // also empties this camera's buffer at full resolution
-                if(settings.VolumeDivisor>1||sim) target=lowRes;
+                int divisor=saver?Math.Max(settings.VolumeDivisor,2):settings.VolumeDivisor;
+                lowRes.Begin(cam,VolumeEvolution.MarchDivisor(divisor,sim)); begun=true; // also empties this camera's buffer at full resolution
+                if((divisor>1||sim)&&lowRes.Available) target=lowRes;
             }
-            if(lowRes!=null&&!flight) lowRes.ShowProbe(cam,false);   // (the grab is the flight camera's)
+            if(lowRes!=null&&(!flight||!lowRes.Available)) lowRes.ShowProbe(cam,false);   // (the grab is the flight camera's)
             for(int i=0;i<slots.Length;i++) if(slots[i]!=null) slots[i].ShowFor(cam,target);
-            if(lowRes!=null&&flight) lowRes.End();
+            if(begun) lowRes.End();
         }
         internal bool Spawn(EventCluster c,FxPlan plan)
         {

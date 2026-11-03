@@ -9,7 +9,7 @@ namespace VolumetricExplosionFX.Ksp
     [KSPAddon(KSPAddon.Startup.Flight,false)]
     public sealed class FlightController : MonoBehaviour
     {
-        internal const string Version="1.1.0";
+        internal const string Version="1.1.1";
         static FlightController active;
         readonly SnapshotCache cache=new SnapshotCache();
         readonly RecentEvents recent=new RecentEvents();
@@ -201,7 +201,7 @@ namespace VolumetricExplosionFX.Ksp
                 }
                 else
                 {
-                    owner=clusters.Add(e,plan.VisualEnergyScore);
+                    owner=clusters.Add(e,plan.VisualEnergyScore,plan.BurnableKg);
                     if(clusters.LastEvicted>0) stock.Release(clusters.LastEvicted);
                 }
                 if(owner!=0&&ReplaceStock&&pool.InRange(where))
@@ -291,6 +291,7 @@ namespace VolumetricExplosionFX.Ksp
                 while((spawned==0||System.Diagnostics.Stopwatch.GetTimestamp()-t0<=spawnBudget)&&(c=clusters.TakeReady(Time.time))!=null)
                 {
                     FxPlan plan=VisualEnergy.Calculate(c.Representative,classifier,settings);
+                    if(!settings.Looks.UseClassic) plan.BurnableKg=VisualEnergy.Combined(plan.BurnableKg,c.BurnableKg);
                     if(!pool.Spawn(c,plan)) stock.Release(c.Id);
                     spawned++;
                 }
@@ -386,7 +387,7 @@ namespace VolumetricExplosionFX.Ksp
                 var e=new DestructionEvent(snapshot,EventKind.GroundImpact,Time.time);
                 FxPlan plan=VisualEnergy.Calculate(e,classifier,settings);
                 if(pool.Absorb(below,below,plan.VisualEnergyScore,false)) absorbed++;
-                else clusters.Add(e,plan.VisualEnergyScore);
+                else clusters.Add(e,plan.VisualEnergyScore,plan.BurnableKg);
             }
             catch(Exception ex) { Fail(ex); }
         }
@@ -570,7 +571,7 @@ namespace VolumetricExplosionFX.Ksp
                     CapturedPart model=PartCapture.ReadPrefab(info.partPrefab,point,flight?across:tilt,settings.DebrisTriangles);
                     if(model!=null) { pool.CaptureTestDebris(model,e,plan,body); break; }
                 }
-                clusters.Add(e,plan.VisualEnergyScore);
+                clusters.Add(e,plan.VisualEnergyScore,plan.BurnableKg);
                 return true;
             }
             catch(Exception ex) { Fail(ex); return false; }

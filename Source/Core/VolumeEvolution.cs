@@ -82,13 +82,16 @@ namespace VolumetricExplosionFX.Core
                 // warhead ~200 m, 100 kt ~800 m, 1 Mt ~1.6 km); the fuel cap made every nuke the same 300 m ball.
                 // Conventional: 4.2 m x TNT(kg)^0.38 (25 kg ~14 m, 250 kg ~34 m, 1 t ~58 m), wider apart than the cube root
                 // of the burnt mass (bombs and missiles looked alike), times the kind's own fire (thermobaric bigger).
-                if(plan.Warhead==WarheadKind.Nuke) return Numbers.Clamp(61*Math.Pow(plan.WarheadTnt/1e6,0.4),30,1600);
+                if(plan.Warhead==WarheadKind.Nuke) return Numbers.Clamp(61*Math.Pow(plan.WarheadTnt/1e6,0.4),30,3000);   // (to about 50 Mt: above 3.5 Mt every burst was drawn the same)
                 double kind=Math.Pow(Numbers.Clamp(plan.BurnableKg/(7*plan.WarheadTnt),0.3,6),1.0/3);
-                return Numbers.Clamp(4.2*Math.Pow(plan.WarheadTnt,0.38)*kind,1.5,95);
+                return Numbers.Clamp(4.2*Math.Pow(plan.WarheadTnt,0.38)*kind,1.5,ModernCap);   // (a 95 m cap drew a MOAB like a 1 t bomb)
             }
             // 1.1 brutal pass: a detonation's fireball and the earth and smoke it throws up fill a third more of the sky.
             double brutal=plan.Warhead!=WarheadKind.None&&plan.Warhead!=WarheadKind.Structure&&plan.Look!=null&&plan.Look.Modern?1.3:1;
-            return Numbers.Clamp(2.9*Math.Pow(m,1.0/3)*brutal,1,plan.Warhead==WarheadKind.Nuke?300:60*brutal);
+            // 1.1.1: the fuel fireball of a big rocket keeps growing with its propellant (2.9 m x burnt mass^(1/3), the
+            // measured fireball of a burning propellant cloud): capped at 60 m, a heavy launcher's crash looked like a tank's.
+            double cap=plan.Warhead==WarheadKind.Nuke?300:plan.Look!=null&&plan.Look.Modern?ModernCap:60*brutal;
+            return Numbers.Clamp(2.9*Math.Pow(m,1.0/3)*brutal,1,cap);
         }
         public static double FireballDuration(FxPlan plan)
         {
@@ -97,7 +100,13 @@ namespace VolumetricExplosionFX.Core
                 return Numbers.Clamp(5.5+2.2*Math.Log10(1+plan.WarheadTnt/1e6),4,14);
             double m=Participating*Numbers.Clamp(plan.BurnableKg,0,1e7); return Numbers.Clamp(m<30000?0.45*Math.Pow(m,1.0/3):2.6*Math.Pow(m,1.0/6),0.8,9);
         }
-        public static double DomeRadius(FxPlan plan) { return Numbers.Clamp(Math.Max(plan.Radius*2.4,FireballRadius(plan)*1.2),1.2,plan.Warhead==WarheadKind.Nuke?2400:110); }
+        // Largest conventional fireball (m) in the 1.1 look; the 1.0 look keeps its own caps (60 m fireball, 110 m dome).
+        public const double ModernCap=400;
+        public static double DomeRadius(FxPlan plan)
+        {
+            double cap=plan.Warhead==WarheadKind.Nuke?3600:plan.Look!=null&&plan.Look.Modern?ModernCap*1.2:110;
+            return Numbers.Clamp(Math.Max(plan.Radius*2.4,FireballRadius(plan)*1.2),1.2,cap);
+        }
         static double ClassicBox(FxPlan plan,BlastLayout layout)
         {
             double box=DomeRadius(plan)/ShellLimit;
@@ -132,7 +141,8 @@ namespace VolumetricExplosionFX.Core
                     // A nuclear cloud climbs kilometres above its baked run and spreads: the box holds its top (and the
                     // ground under an air burst) where the climb eases to a stop, at 0.82 of the box.
                     double top=Math.Max(layout.NukeTop,scale*maxY)*1.04+layout.NukeGround;
-                    need=Math.Max(need,Math.Max(top/0.8,Math.Max(0.3*layout.NukeTop,scale*maxXZ)*1.3));
+                    double capShare=layout.NukeCapShare>0?layout.NukeCapShare:0.3;
+                    need=Math.Max(need,Math.Max(top/0.8,Math.Max(capShare*layout.NukeTop*1.7,scale*maxXZ)*1.3));   // (1.7: its last spread)
                 }
             }
             return need*1.05;
@@ -238,8 +248,9 @@ namespace VolumetricExplosionFX.Core
                 double metres=s.ShockRadius*box;
                 // A nuclear blast wave stays strong while it crosses kilometres (it is what one sees race over the ground).
                 double keepShock=plan.Warhead==WarheadKind.Nuke?Math.Max(2.4*tau,0.45*reachMetres/Math.Max(sound,50)):4.5*tau;
-                s.ShockStrength=Numbers.Clamp(air*strength*look.ShockwaveStrength*Smooth(0,0.02,age)*Math.Exp(-age/keepShock)*
-                    (1-Smooth(0.4*reachMetres,reachMetres,metres)),0,1.5);
+                double violent=plan.Warhead==WarheadKind.Nuke?1+0.8*NukeCloud.Megaton(plan.WarheadTnt/1e6):1;   // (a megaton front bends the land harder)
+                s.ShockStrength=Numbers.Clamp(air*strength*look.ShockwaveStrength*violent*Smooth(0,0.02,age)*Math.Exp(-age/keepShock)*
+                    (1-Smooth(0.4*reachMetres,reachMetres,metres)),0,1.5*violent);
                 // A nuclear blast front in the test films: a sharp, shimmering shell sweeping out over the land for kilometres
                 // and bending everything behind it as it passes, weakening with distance. It faded in time (gone ~2 s after the
                 // flash, before reaching 1 km); now with distance only, out to twice the reach above (20 kt: 6.5 km).
@@ -642,11 +653,12 @@ namespace VolumetricExplosionFX.Core
             bool nuke=plan.Warhead==WarheadKind.Nuke;
             if(nuke) front=Math.Sqrt(Math.Max(front*front-plan.BurstHeight*plan.BurstHeight,0));   // where the sphere meets the ground
             double f=front/reach;
-            double strength=Smooth(3.6,6.2,plan.VisualEnergyScore)*Numbers.Clamp(plan.Atmosphere,0,1)*(nuke?1.6:1.6);
+            double strength=Smooth(3.6,6.2,plan.VisualEnergyScore)*Numbers.Clamp(plan.Atmosphere,0,1)*(nuke?1.6*(1+0.6*NukeCloud.Megaton(plan.WarheadTnt/1e6)):1.6);
             // The lifted dust outlives the front by seconds: the whole sheet fades out once the dust has had time to settle.
             double settle=GroundWaveSettle(plan);
             double opacity=strength*Smooth(0,0.12,s.Age)*(1-Smooth(0.6*settle,settle,s.Age));
-            double height=Numbers.Clamp(0.05*Math.Min(front,reach),0.4,nuke?160:25)*(0.6+0.4*Math.Min(strength,1));
+            double wall=nuke?160*(1+3*NukeCloud.Megaton(plan.WarheadTnt/1e6)):25;   // (the Tsar Bomba's dust wall: up to 640 m)
+            double height=Numbers.Clamp(0.05*Math.Min(front,reach),0.4,wall)*(0.6+0.4*Math.Min(strength,1));
             double width=0.06;
             return new Vec4(Math.Min(f,1.5),height,opacity,width);
         }
@@ -670,7 +682,12 @@ namespace VolumetricExplosionFX.Core
         }
         // How far a nuclear blast wave stays visible over the ground (m): around the 1 psi radius, about 1.2 km x kt^(1/3)
         // (20 kt: 3.3 km, 1 Mt: 12 km). The dust it lifts runs out with it.
-        public static double NukeBlastReach(FxPlan plan) { return Numbers.Clamp(1200*Math.Pow(Math.Max(plan.WarheadTnt/1e6,0.001),1.0/3),600,15000); }
+        // (megatons: twice as far at 50 Mt, the Tsar Bomba's wave seen racing out for tens of kilometres)
+        public static double NukeBlastReach(FxPlan plan)
+        {
+            double kt=Math.Max(plan.WarheadTnt/1e6,0.001);
+            return Numbers.Clamp(1200*Math.Pow(kt,1.0/3)*(1+NukeCloud.Megaton(kt)),600,80000);
+        }
         public static double GroundWaveSettle(FxPlan plan) { return plan.Warhead==WarheadKind.Nuke?40:Numbers.Clamp(6+0.15*DomeRadius(plan),7,20); }
         // A lobe as the sun sees it: centre and the radius of its gas (proxy units).
         public static Vec4 ShadowLobe(VolumeState s,int i)

@@ -93,6 +93,8 @@ namespace VolumetricExplosionFX.Core
                 PuffCount=(int)Numbers.Clamp(8+score*7,8,settings.ParticlesPerEvent/2)
             };
         }
+        // The fuel of a cluster's parts burning as one fireball (1.1.1): at least the strongest part's own, at most 1e7 kg.
+        public static double Combined(double own,double cluster) { return Numbers.Clamp(Math.Max(own,cluster),0,1e7); }
         // How deep under the sea it broke up (m). A fast object is found a frame or two below the surface it hit (a
         // missile at 300 m/s, 6-12 m down): that drew a surface impact as an underwater blast (a dome, then a tall column).
         static double WaterDepth(DestructionEvent e,PartSnapshot p)

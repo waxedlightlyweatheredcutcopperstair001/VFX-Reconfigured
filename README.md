@@ -31,7 +31,7 @@ The full list is in the [changelog](CHANGELOG.md). The 1.0 look stays available 
 ## Installation
 
 1. Close KSP.
-2. Download `VolumetricExplosionFX-1.1.0.zip` from the [Releases page](https://github.com/warnix91/Volumetric-Explosion-FX/releases/latest)
+2. Download the `VolumetricExplosionFX-x.y.z.zip` file from the [Releases page](https://github.com/warnix91/Volumetric-Explosion-FX/releases/latest)
    or [SpaceDock](https://spacedock.info/mod/4652), extract it and copy `VolumetricExplosionFX` into `GameData`.
    The green "Code" button and the "Source code" files only contain the source, not the mod itself.
 3. Launch KSP. The flame toolbar button opens the settings.
@@ -44,6 +44,8 @@ To uninstall, remove `GameData/VolumetricExplosionFX`.
 
 **Ultra is the default quality.** Pick a quick setup (Cinematic, Balanced or Performance), or select High, Medium or
 Low if you need better performance. The volume resolution (Full, 1/2, 1/3) and adaptive performance give finer control.
+On graphics cards with less than 6 GB of video memory, the video memory saver turns on by itself; you can also force it
+on or off in the Performance page.
 Existing saved settings take precedence over the defaults.
 
 The window comes in five styles and three layouts. Photo mode (Alt+F7) slows down or freezes the explosions while the

@@ -314,7 +314,7 @@ Shader "VolumetricExplosionFX/NukeVolume"
                         float lump=N(float3(dir2*0.9,0.31+k*0.37)+Seed()*0.05).a;
                         float Ro=S*(1.4+(2.4+0.7*k)*grow+0.6*evap)*(0.72+0.56*lump), Ri=S*1.02;
                         float ex=(rho-0.5*(Ro+Ri))/max(0.5*(Ro-Ri),1e-4);
-                        if(abs(ex)>1.5) continue;
+                        if(abs(ex)>2.2) continue;   // (cut at 1.5 while still dense: seen edge-on, the ring was a box with sharp sides)
                         float x=saturate((rho-Ri)/max(Ro-Ri,1e-4));
                         float3 xr=float3(p.x,(p.y-hk)*2.2,p.z)/S*0.9+Seed()*0.05+k*1.7-float3(dir2.x,0,dir2.y)*u*0.12;
                         float b=BillowsCheap(xr)*0.7+N(xr*2.3+1.1).r*0.3;
@@ -324,7 +324,7 @@ Shader "VolumetricExplosionFX/NukeVolume"
                         float appear=smoothstep(0,0.7,u);
                         // Evaporating: from the edge inward, and through holes.
                         float gone=saturate(evap*1.3+(x-0.5)*0.6*evap);
-                        float d=saturate((shape+(b-0.5)*1.8-(1-appear)*0.8-gone*1.1)/0.22)*front;
+                        float d=saturate((shape+(b-0.5)*1.8-(1-appear)*0.8-gone*1.1)/0.22)*front*smoothstep(2.2,1.2,abs(ex));
                         r.w=max(r.w,_NkPile2.y*d*1.8*sqrt(appear)*(1-0.5*evap));
                     }
                 }

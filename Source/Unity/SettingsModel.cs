@@ -107,6 +107,10 @@ namespace VolumetricExplosionFX.Rendering
                 Hint=L("VolumeResolutionHint","Fireballs and fires drawn at reduced resolution: much faster, slightly softer."),
                 Options=new[]{L("Full","Full"),"1/2","1/3"}, GetChoice=()=>s.VolumeDivisor-1,
                 SetChoice=i=>{ s.VolumeDivisor=i+1; s.Validate(); } });
+            perf.Rows.Add(new UiRow { Kind=UiRowKind.Choice, Label=L("MemorySaver","Video memory saver"),
+                Hint=L("MemorySaverHint","Uses less video memory to avoid black screens and crashes on graphics cards with little memory. Automatic: on below 6 GB."),
+                Options=new[]{L("MemoryAuto","Automatic"),L("MemoryOn","On"),L("MemoryOff","Off")}, GetChoice=()=>s.LowMemory,
+                SetChoice=i=>{ s.LowMemory=i; s.Validate(); } });
             Toggle(perf,L("Adaptive","Adaptive performance"),L("AdaptiveHint","Lowers volume detail and lights while the frame rate drops, then restores them."),
                 ()=>s.Adaptive,v=>s.Adaptive=v);
             perf.Rows.Add(new UiRow { Kind=UiRowKind.Info, Label=L("Limits","Limits"),

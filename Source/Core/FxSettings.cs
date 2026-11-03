@@ -32,6 +32,11 @@ namespace VolumetricExplosionFX.Core
         // Volumes are ray-marched at 1/VolumeDivisor of the screen width and height (1 = full).
         // Independent of the quality presets.
         public int VolumeDivisor=1;
+        // Video memory saver: 0 automatic (on with less than 6 GB of video memory), 1 always on, 2 off (saved).
+        // On: volumes at reduced resolution, no full-screen copies for the cloud masking and the engine flames over clouds.
+        public int LowMemory;
+        public const int LowMemoryMegabytes=6000;
+        public static bool SavesMemory(int setting,int videoMegabytes) { return setting==1||(setting==0&&videoMegabytes>0&&videoMegabytes<LowMemoryMegabytes); }
         public void ApplyPreset(Quality quality)
         {
             Quality=quality;
@@ -67,7 +72,7 @@ namespace VolumetricExplosionFX.Core
             PartDebris=o.PartDebris; Residue=o.Residue; Quality=o.Quality; MaxEvents=o.MaxEvents; MaxDebris=o.MaxDebris; MaxLights=o.MaxLights;
             ParticlesPerEvent=o.ParticlesPerEvent; MaxVolumes=o.MaxVolumes; VolumeSteps=o.VolumeSteps; MaxDebrisParts=o.MaxDebrisParts;
             DebrisTriangles=o.DebrisTriangles; ResidueSeconds=o.ResidueSeconds; Distance=o.Distance; Intensity=o.Intensity; DebrisDensity=o.DebrisDensity;
-            Looks=o.Looks; LookEditor=o.LookEditor; Adaptive=o.Adaptive; VolumeDivisor=o.VolumeDivisor;
+            Looks=o.Looks; LookEditor=o.LookEditor; Adaptive=o.Adaptive; VolumeDivisor=o.VolumeDivisor; LowMemory=o.LowMemory;
             CameraShake=o.CameraShake; PhotoMode=o.PhotoMode; Profile=o.Profile; UiStyle=o.UiStyle; UiLayout=o.UiLayout; UiOpacity=o.UiOpacity; UiSize=o.UiSize;
         }
         public string Structure { get { return Volumetric+"|"+MaxEvents+"|"+ParticlesPerEvent+"|"+MaxDebrisParts; } }
@@ -80,6 +85,7 @@ namespace VolumetricExplosionFX.Core
             MaxVolumes=(int)Numbers.Clamp(MaxVolumes,0,16); VolumeSteps=(int)Numbers.Clamp(VolumeSteps,16,56);
             MaxDebrisParts=(int)Numbers.Clamp(MaxDebrisParts,0,48); DebrisTriangles=(int)Numbers.Clamp(DebrisTriangles,300,16000);
             ResidueSeconds=Numbers.Clamp(ResidueSeconds,0,180); VolumeDivisor=(int)Numbers.Clamp(VolumeDivisor,1,3);
+            LowMemory=(int)Numbers.Clamp(LowMemory,0,2);
             UiStyle=(int)Numbers.Clamp(UiStyle,0,4); UiLayout=(int)Numbers.Clamp(UiLayout,0,2);
             UiOpacity=Numbers.Clamp(UiOpacity,0.35,1); UiSize=Numbers.Clamp(UiSize,0.7,1.3);
         }

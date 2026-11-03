@@ -16,6 +16,7 @@ The interface follows the language selected in KSP.
 
 Quality defaults to Ultra. Existing saved settings take precedence.
 Pick the Performance quick setup or a lower quality if needed.
+On graphics cards with less than 6 GB of video memory, the video memory saver turns on by itself (Performance page).
 Photo mode (Alt+F7) slows down or freezes the explosions while the game runs.
 The 1.0 look stays available: "Compare with 1.0" in the look editor.
 

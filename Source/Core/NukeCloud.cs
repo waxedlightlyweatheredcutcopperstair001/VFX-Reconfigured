@@ -96,6 +96,11 @@ namespace VolumetricExplosionFX.Core
             return Numbers.Clamp((0.95*Math.Exp(-age/(0.3*k))+0.4*Math.Exp(-age/(1.6*k)))*Smooth(0,0.03,age)*near,0,0.97);
         }
         static double Smooth(double a,double b,double x) { double t=Numbers.Clamp((x-a)/(b-a),0,1); return t*t*(3-2*t); }
+        // How far into the megatons a yield is: 0 up to 1 Mt, 1 at 50 Mt (the Tsar Bomba).
+        public static double Megaton(double kt) { return Numbers.Clamp(Math.Log10(Math.Max(kt,1e-3)/1000)/Math.Log10(50),0,1); }
+        // The cap's radius as a share of the cloud's height: 0.3 up to a megaton, 0.55 at 50 Mt (the Tsar Bomba's cloud
+        // was about 95 km across for 67 km high: the biggest caps spread far wider than they climb).
+        public static double CapShare(double kt) { return 0.3+0.25*Megaton(kt); }
         // Cloud top above the burst point (m): the climb to NukeTop (Glasstone fig. 2.16), slowed at first while the bubble
         // gathers speed (lift time ~0.4 tf).
         public static double Top(BlastLayout layout,double fireball,double tf,double age)
@@ -126,7 +131,7 @@ namespace VolumetricExplosionFX.Core
             else if(air<0.5) top=R+(top-R)*(0.35+0.65*Math.Sqrt(air/0.5));
             // The fireball rolls up into a mushroom over a couple of its glowing times.
             double m=vacuum?0:Smooth(0.25*tf,2.2*tf,age);
-            double capR=Math.Max(R*(1+0.2*m),0.3*top);
+            double share=CapShare(kt), capR=Math.Max(R*(1+0.2*m),share*top);
             double halfH=R+(0.55*capR-R)*m;
             // Its last minutes: it spreads and flattens as it drifts.
             double life=VolumeEvolution.VolumeDuration(plan), late=Smooth(0.45*life,0.96*life,age);
@@ -138,7 +143,9 @@ namespace VolumetricExplosionFX.Core
             double roll=0.9*(top-Rf)/Math.Max(tube,1);
             // Incandescence: a blinding core that fades within a couple of glowing times, and a long red-orange tail glowing in
             // the heart of the rolling cap for tens of seconds (the iconic glowing mushroom of the test films).
-            double heat=vacuum?Math.Exp(-age/(0.15*tf)):0.5*Math.Exp(-age/(0.9*tf))+0.38*Math.Exp(-age/(6*tf))+0.12*Math.Exp(-age/(22*tf));
+            double mega=Megaton(kt);
+            // (megatons: the glowing heart burns on longer and hotter in the rolling cap)
+            double heat=vacuum?Math.Exp(-age/(0.15*tf)):0.5*Math.Exp(-age/(0.9*tf))+(0.38*Math.Exp(-age/(6*tf))+0.12*Math.Exp(-age/(22*tf*(1+mega))))*(1+0.3*mega);
             f.Ball=new Vec4(cy/box,capR/box,halfH/box,m);
             f.Torus=new Vec4(ring/box,tube/box,roll,heat);
             // The dust stem: on a ground burst it trails the fireball from the moment it lifts off (it used to catch
@@ -149,14 +156,15 @@ namespace VolumetricExplosionFX.Core
             double ground=-hb;
             double under=cy-0.55*halfH;
             double reach=vacuum?0:kind==NukeKind.Surface?Smooth(0.03*tf,0.7*tf,age):kind==NukeKind.LowAir?Numbers.Clamp(1.35-0.22*hb/Rf,0.25,1)*Smooth(0.5*tf,4*tf,age):0;
-            double stemR=capR*Numbers.Clamp(0.2*Math.Pow(kt/20,-0.1),0.11,0.26)*(kind==NukeKind.Surface?1:0.65);
+            // (megatons: a thicker stem and a broader skirt under the wider cap: the Tsar Bomba's foot was kilometres wide)
+            double stemR=capR*Numbers.Clamp(0.2*Math.Pow(kt/20,-0.1),0.11,0.26)*(1+0.6*mega)*(kind==NukeKind.Surface?1:0.65);
             double stemTop=ground+reach*Math.Max(under-ground,0);
             double stemDensity=reach>0?(kind==NukeKind.Surface?1:0.6)*(0.4+0.6*Smooth(0.1*tf,1.6*tf,age)):0;
             stemDensity*=1-0.5*late;
             f.Stem=new Vec4(ground/box,stemR/box,stemTop/box,stemDensity);
             // The dust skirt at the stem's foot: a broad, low cloud of dirt that billows out from ground zero.
             // (On water it is the base surge: a ring of white mist rolling out over the sea, wider and longer-lived.)
-            double skirtR=stemR*(1.5+(water?4.2:2.1)*Smooth(0.05*tf,(water?5:4)*tf,age));
+            double skirtR=stemR*(1.5+(water?4.2:2.1)*(1+1.5*mega)*Smooth(0.05*tf,(water?5:4)*tf,age));
             double skirt=kind==NukeKind.Surface?1:kind==NukeKind.LowAir?0.7*Math.Exp(-hb/(2.5*Rf)):0;
             skirt*=Smooth(0.03*tf,0.4*tf,age);
             skirt*=1-Smooth(0.3*life,0.65*life,age);
@@ -199,14 +207,14 @@ namespace VolumetricExplosionFX.Core
             if((layout.NukeHumid||water)&&!vacuum&&air>0.5)
             {
                 double t0=0.9*tf, R0=Growth(Rf,tf,t0), top0=Math.Max(Top(layout,Rf,tf,t0),R0);
-                double m0=Smooth(0.25*tf,2.2*tf,t0), cap0=Math.Max(R0*(1+0.2*m0),0.3*top0);
+                double m0=Smooth(0.25*tf,2.2*tf,t0), cap0=Math.Max(R0*(1+0.2*m0),share*top0);
                 double spread=1+0.7*Smooth(t0,t0+8*tf,age);
                 for(int k=0;k<1;k++)   // (one: two stacked hoods were a stack of saucers)
                 {
                     // Formed ahead of the cap, where its top will be a little later: it floats over the climbing cloud as a
                     // white hood, then the cloud punches through it (its rim a skirt round the cloud for a moment).
                     double ahead=t0+(0.6+1.4*k)*tf, Rr=Growth(Rf,tf,ahead), topR=Math.Max(Top(layout,Rf,tf,ahead),Rr);
-                    double capAt=Math.Max(Rr*(1+0.2*Smooth(0.25*tf,2.2*tf,ahead)),0.3*topR);
+                    double capAt=Math.Max(Rr*(1+0.2*Smooth(0.25*tf,2.2*tf,ahead)),share*topR);
                     double height=topR+(0.12+0.05*k)*capAt;
                     double passed=Smooth(height-0.3*capR,height+1.1*capR,top);
                     // (once the cloud has punched through, a ragged skirt of it hangs round the cap for a while

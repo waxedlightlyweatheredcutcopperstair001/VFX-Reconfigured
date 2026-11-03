@@ -59,7 +59,7 @@ namespace VolumetricExplosionFX.Core
         {
             if(plan==null||w.Kind==WarheadKind.None) return;
             // Up to 10 Mt (it was capped at 1 kt: every nuclear warhead above that looked the same).
-            double tnt=Numbers.Clamp(w.TntKg,0.01,1e10), energy=tnt*4.184e6, range=Numbers.Clamp(w.RangeM,1,5000);
+            double tnt=Numbers.Clamp(w.TntKg,0.01,1e11), energy=tnt*4.184e6, range=Numbers.Clamp(w.RangeM,1,5000);
             plan.Warhead=w.Kind; plan.WarheadRange=range; plan.WarheadTnt=tnt;
             plan.KineticJoules=energy*0.25;
             plan.VisualEnergyScore=Numbers.Clamp(Math.Log10(1+energy/1000),2,8.5);

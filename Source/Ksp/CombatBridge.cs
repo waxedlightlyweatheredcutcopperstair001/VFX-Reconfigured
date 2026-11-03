@@ -232,7 +232,7 @@ namespace VolumetricExplosionFX.Ksp
         internal bool WarheadOf(Part part,out WarheadInfo info,out string weapon)
         {
             info=default(WarheadInfo); weapon=null;
-            if(!Available||part==null||part.Modules==null) return false;
+            if(!Available||part==null||part.Modules==null) { Diagnose(part,"bridge "+(Available?"on":"off")); return false; }
             try
             {
                 for(int i=0;i<part.Modules.Count;i++)
@@ -258,9 +258,44 @@ namespace VolumetricExplosionFX.Ksp
                         return tnt>0.01;
                     }
                 }
+                if(KnownNuke(part,ref info)) return true;
+                Diagnose(part,"no warhead module recognised");
             }
-            catch(Exception) { }
+            catch(Exception ex) { Diagnose(part,"read failed: "+ex.GetType().Name+" "+ex.Message); }
             return false;
+        }
+        // Nuclear bombs of weapon packs known by part name, for when their nuke module is not on the part: NKDR's Tsar
+        // Bomba lost it to a missing brace in its config and fell as a plain part. Yield (kt) and thermal reach (m).
+        static readonly Dictionary<string,double[]> KnownNukes=new Dictionary<string,double[]>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "tsarBomba", new[]{ 50000.0, 11500 } },
+        };
+        static bool KnownNuke(Part part,ref WarheadInfo info)
+        {
+            double[] known;
+            string name=part.partInfo!=null?part.partInfo.name:part.name;
+            if(name==null||!KnownNukes.TryGetValue(name,out known)) return false;
+            info=new WarheadInfo { Kind=WarheadKind.Nuke, TntKg=known[0]*1e6, RangeM=known[1] };
+            return true;
+        }
+        // A part from the combat mod that dies without a recognised warhead: its modules, to find why (logged a few times).
+        int diagnosed;
+        void Diagnose(Part part,string why)
+        {
+            if(part==null||part.Modules==null||diagnosed>=20) return;
+            var names=new System.Text.StringBuilder();
+            bool combatPart=false;
+            for(int i=0;i<part.Modules.Count;i++)
+            {
+                PartModule m=part.Modules[i]; if(m==null) continue;
+                string n=m.GetType().FullName??m.GetType().Name;
+                if(n.StartsWith("BDArmory",StringComparison.Ordinal)) combatPart=true;
+                names.Append(i>0?", ":"").Append(n);
+            }
+            if(!combatPart) return;
+            diagnosed++;
+            Debug.Log("[VEFX] Combat part "+part.name+" destroyed without a warhead ("+why+"): "+names+
+                " | nuke module "+(nukeModuleType!=null?nukeModuleType.FullName:"not found")+", yield field "+(yieldField!=null?"ok":"missing"));
         }
         int HideVisuals(GameObject go,Component fx,Source s)
         {

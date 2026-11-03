@@ -24,7 +24,7 @@ namespace VolumetricExplosionFX.Rendering
             if(!Enabled||Shake.Amplitude(score,0,air,dome,nuclear)<=0) return;
             Transform frame=FlightGlobals.currentMainBody!=null?FlightGlobals.currentMainBody.transform:null;
             if(jolts.Count>=12) jolts.RemoveAt(0);
-            jolts.Add(new Jolt { Born=Time.time, Score=score, Air=air, Dome=dome, Nuclear=nuclear, Speed=Shake.Speed(air), Duration=Shake.Duration(score,nuclear),
+            jolts.Add(new Jolt { Born=Time.time, Score=score, Air=air, Dome=dome, Nuclear=nuclear, Speed=Shake.Speed(air), Duration=Shake.Duration(score,nuclear,dome),
                 Local=frame!=null?frame.InverseTransformPoint(at):at, Frame=frame, Phase=(float)(at.x*0.37+at.z*0.11)%6.28f });
             Count++;
         }

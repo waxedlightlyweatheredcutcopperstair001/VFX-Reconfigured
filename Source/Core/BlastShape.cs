@@ -65,7 +65,7 @@ namespace VolumetricExplosionFX.Core
         public bool SimHugsGround;
         // 1.1 nuclear detonation: its kind, megaton-class (condensation rings, ice cap), humid air (Wilson cloud, rings),
         // how far the cloud climbs after the baked run (m), how much it spreads, and the burst height (m).
-        public NukeKind Nuke; public bool NukeThermo, NukeHumid, NukeWilson; public double NukeRise, NukeSpread, NukeGround, NukeTop, NukeTau;
+        public NukeKind Nuke; public bool NukeThermo, NukeHumid, NukeWilson; public double NukeRise, NukeSpread, NukeGround, NukeTop, NukeTau, NukeCapShare;
         public double SimTall { get { return SimHeight/Math.Max(SimBreadth,0.5); } }
         public int SimRun, SimAirRun;   // which baked run this explosion takes on the ground and in the air (FireSim.GroundRuns, AirRuns)
         // 1.1 warheads: one cloud from one point (no satellite blobs), and how fast it reaches its size (1 = fuel fire, more = faster).
@@ -350,9 +350,15 @@ namespace VolumetricExplosionFX.Core
                 // radius (10 kt: 19 000 ft top, 10 000 ft base, 10 000 ft across). The real cloud takes ~10 minutes to get
                 // there; here it covers most of the way in two to four (time constant 40 s at 0.25 kt to 130 s at 1 Mt).
                 // (Below 20 kt the height follows the yield more steeply: a 0.25 kt and a 1.5 kt warhead looked alike.)
-                L.NukeTop=kt<20?Numbers.Clamp(7510*Math.Pow(kt/20,0.45),400,7510):Numbers.Clamp(3048*Math.Pow(kt,0.301),7510,21000);
+                // (above a megaton the cloud climbs more slowly, about 34 km for 10 Mt and 48 km for the 50 Mt Tsar Bomba, and
+                // spreads much wider instead (NukeCloud.CapShare): at 64 km on Kerbin it stood as a thin tower in space, at 34 km
+                // it sat too low)
+                L.NukeTop=kt<20?Numbers.Clamp(7510*Math.Pow(kt/20,0.45),400,7510):kt<=1000?Numbers.Clamp(3048*Math.Pow(kt,0.301),7510,21000):
+                    Numbers.Clamp(21000*Math.Pow(kt/1000,0.21),21000,55000);
+                L.NukeCapShare=NukeCloud.CapShare(kt);
                 // It climbs fast at first (about 80 m/s at 1.5 kt, 170 m/s at 20 kt), slowing as it nears the top.
-                L.NukeTau=Numbers.Clamp(25+15*Math.Log10(kt),18,90);
+                // (megatons shoot up faster: the Tsar Bomba's cloud reached ~40 km in under three minutes)
+                L.NukeTau=Numbers.Clamp(25+15*Math.Log10(kt),18,90)*(1-0.45*NukeCloud.Megaton(kt));
             }
             bool surfaceForm=L.Form==BlastForm.Rupture||L.Form==BlastForm.Grazing||L.Form==BlastForm.Vertical;
             L.Stem=ground&&air>0.3&&R>5&&surfaceForm?rnd.Range(0.6,1):0;

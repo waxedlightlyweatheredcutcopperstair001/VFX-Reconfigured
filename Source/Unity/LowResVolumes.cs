@@ -77,7 +77,10 @@ namespace VolumetricExplosionFX.Rendering
         static readonly int OverlayCentreId=Shader.PropertyToID("_VefxOverlayCentre");
         readonly List<Material> overlayMaterials=new List<Material>();   // (reused: sharedMaterials made a new array per plume per frame)
         internal LowResVolumes(Material compositeMaterial) { composite=compositeMaterial; }
-        internal bool Available { get { return composite!=null; } }
+        internal bool Available { get { return composite!=null&&Failures<3; } }
+        // Reduced-resolution images the graphics card could not make (out of video memory): that frame draws no volumes
+        // through here; after three, the caller draws them without this pass (no image to allocate).
+        internal int Failures;
         // Starts filling the buffers of the camera about to render (divisor 2 = half resolution;
         // 1 = full resolution, used only to smooth the ray-march dither of the 1.1 fireball).
         internal void Begin(Camera cam,int resolutionDivisor)
@@ -104,6 +107,12 @@ namespace VolumetricExplosionFX.Rendering
             current=marches[slot]; after=composites[slot]; current.Clear(); after.Clear();
             int w=Mathf.Max(1,(cam.pixelWidth+divisor-1)/divisor), h=Mathf.Max(1,(cam.pixelHeight+divisor-1)/divisor);
             image=Sized(ref images[slot],w,h,FilterMode.Bilinear); frontImage=Sized(ref frontImages[slot],w,h,FilterMode.Point);
+            if(!image.IsCreated()||!frontImage.IsCreated())
+            {
+                Failures++;
+                Free(images[slot]); images[slot]=null; Free(frontImages[slot]); frontImages[slot]=null;
+                image=null; frontImage=null; current=null; after=null; return;
+            }
             occluding=CloudOcclusion&&ProbeMaterial!=null;
             if(occluding)
             {

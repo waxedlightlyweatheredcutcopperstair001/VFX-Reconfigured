@@ -6,7 +6,7 @@ from localization import validate_localization
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 NAME='VolumetricExplosionFX'
-VERSION='1.1.0'
+VERSION='1.1.1'
 BUILD=ROOT/'build'
 def run(args):
     subprocess.run([str(x) for x in args],check=True,cwd=ROOT)

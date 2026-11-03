@@ -369,7 +369,7 @@ public static class PreviewVolumes
         b.Camera=cameraObject.AddComponent<Camera>();
         b.Camera.clearFlags=dark||high||night?CameraClearFlags.SolidColor:CameraClearFlags.Skybox; b.Camera.backgroundColor=high?new Color(0.02f,0.035f,0.09f):night?new Color(0.008f,0.01f,0.02f):Color.black;
         b.Camera.allowHDR=false; b.Camera.allowMSAA=false; b.Camera.fieldOfView=50;
-        b.Camera.nearClipPlane=0.3f; b.Camera.farClipPlane=20000; b.Camera.depthTextureMode=DepthTextureMode.Depth;
+        b.Camera.nearClipPlane=0.3f; b.Camera.farClipPlane=Mathf.Max(20000,unit*40); b.Camera.depthTextureMode=DepthTextureMode.Depth;   // (a megaton cloud at a fixed large scale)
         Vector3 target=new Vector3(0,ground||water?unit*0.35f:0,0);
         // VEFX_BENCH_TARGET=k: aim the camera at k dome radii above the blast (the rising cloud) instead of the fireball.
         float aim; if(float.TryParse(Environment.GetEnvironmentVariable("VEFX_BENCH_TARGET"),System.Globalization.NumberStyles.Float,System.Globalization.CultureInfo.InvariantCulture,out aim)) target=new Vector3(0,unit*aim,0);

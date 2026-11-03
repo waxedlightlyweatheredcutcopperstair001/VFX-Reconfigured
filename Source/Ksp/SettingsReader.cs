@@ -49,6 +49,7 @@ namespace VolumetricExplosionFX.Ksp
             s.DebrisDensity=Number(n,"debrisDensity",s.DebrisDensity);
             s.VolumeDivisor=(int)Number(n,"volumeResolution",Flag(n,"halfResolutionVolumes",false)?2:s.VolumeDivisor);
             s.LookEditor=Flag(n,"lookEditor",s.LookEditor); s.Adaptive=Flag(n,"adaptivePerformance",s.Adaptive);
+            s.LowMemory=(int)Number(n,"videoMemorySaver",s.LowMemory);
             s.Looks.UseClassic=Flag(n,"classicLook",s.Looks.UseClassic);
             s.UiStyle=(int)Number(n,"uiStyle",s.UiStyle); s.UiLayout=(int)Number(n,"uiLayout",s.UiLayout);
             s.UiOpacity=Number(n,"uiOpacity",s.UiOpacity); s.UiSize=Number(n,"uiSize",s.UiSize);
@@ -84,7 +85,7 @@ namespace VolumetricExplosionFX.Ksp
             Add(n,"maximumEvents",s.MaxEvents); Add(n,"maximumDebris",s.MaxDebris); Add(n,"maximumLights",s.MaxLights);
             Add(n,"particlesPerEvent",s.ParticlesPerEvent); Add(n,"maximumVolumes",s.MaxVolumes); Add(n,"volumeSteps",s.VolumeSteps);
             Add(n,"maximumDebrisParts",s.MaxDebrisParts); Add(n,"debrisTrianglesPerPart",s.DebrisTriangles);
-            Add(n,"lookEditor",s.LookEditor); Add(n,"adaptivePerformance",s.Adaptive); Add(n,"volumeResolution",s.VolumeDivisor); Add(n,"classicLook",s.Looks.UseClassic); Add(n,"uiStyle",s.UiStyle); Add(n,"uiLayout",s.UiLayout); Add(n,"uiOpacity",s.UiOpacity); Add(n,"uiSize",s.UiSize);
+            Add(n,"lookEditor",s.LookEditor); Add(n,"adaptivePerformance",s.Adaptive); Add(n,"volumeResolution",s.VolumeDivisor); Add(n,"videoMemorySaver",s.LowMemory); Add(n,"classicLook",s.Looks.UseClassic); Add(n,"uiStyle",s.UiStyle); Add(n,"uiLayout",s.UiLayout); Add(n,"uiOpacity",s.UiOpacity); Add(n,"uiSize",s.UiSize);
             // Only edited profiles are written, so untouched kinds follow future shipped defaults.
             foreach(LookKind kind in Enum.GetValues(typeof(LookKind)))
             {
