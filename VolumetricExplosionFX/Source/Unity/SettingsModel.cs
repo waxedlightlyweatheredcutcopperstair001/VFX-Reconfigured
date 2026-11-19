@@ -28,7 +28,7 @@ namespace VolumetricExplosionFX.Rendering
         {
             var text=h.Text??new UiText("en-us");
             string L(string key,string fallback) { return text.Get(key,fallback); }
-            var m=new UiModel { Title="Volumetric Explosion FX", Subtitle="VEFX  ·  "+L("Settings","Settings")+"  ·  "+h.Version,
+            var m=new UiModel { Title="Volumetric FX Reconfigured", Subtitle="Based on VEFX and VGFX  ·  "+L("Settings","Settings")+"  ·  "+h.Version,
                 Reset=L("Defaults","Defaults"), Close=h.Close, ResetAll=h.Reset, Changed=h.Changed, Status=h.Status };
             m.Style=(UiStyle)s.UiStyle; m.Layout=(UiLayout)s.UiLayout; m.Opacity=(float)s.UiOpacity;
             var general=Page(m,L("General","General"),UiGlyph.General);
@@ -73,6 +73,9 @@ namespace VolumetricExplosionFX.Rendering
                 ()=>(float)s.UiOpacity,v=>s.UiOpacity=v,v=>(v*100).ToString("0",text.Culture)+" %");
             Slider(general,L("WindowSize","Window size"),L("WindowSizeHint","Size of this window on the screen."),0.7f,1.3f,0.05f,
                 ()=>(float)s.UiSize,v=>s.UiSize=v,v=>(v*100).ToString("0",text.Culture)+" %");
+            // VFX Reconfigured: explosion look and timing, and the ground effects.
+            ReconfiguredPages.Look(m,s,text,Page,Slider,Section,Limit);
+            ReconfiguredPages.Ground(m,text,Page,Slider,Toggle);
             var blasts=Page(m,L("Explosions","Explosions"),UiGlyph.Blast);
             Section(blasts,L("Fireballs","Fireballs"));
             Toggle(blasts,L("Explosions","Explosions"),L("ExplosionsHint","Fire and smoke based on the destroyed part contents."),()=>s.Explosions,v=>s.Explosions=v);
@@ -148,7 +151,6 @@ namespace VolumetricExplosionFX.Rendering
                 new Mod("Deferred",0,L("ModDeferred","Deferred rendering: supported."),"Deferred"),
                 new Mod("Kopernicus",0,L("ModKopernicus","Other worlds: dust, sea and air taken from each body."),"Kopernicus"),
                 new Mod("Firefly",0,L("ModFirefly","Re-entry heating: both show side by side."),"Firefly"),
-                new Mod("Volumetric Ground FX",0,L("ModVGFX","Engine dust and water: made to work with VEFX."),"GroundBlastFx","VolumetricGroundFX"),
                 new Mod("PlumeDynamics",0,L("ModPlume","Engine plumes: drawn in front of the clouds."),"PlumeDynamics"),
                 new Mod("SmokeScreen",0,L("ModSmokeScreen","Engine smoke: works alongside."),"SmokeScreen"),
                 new Mod("KerbalFX",1,L("ModKerbalFX","Contrails and dust work together; its own blast effect adds to the explosions of VEFX."),"KerbalFX"),

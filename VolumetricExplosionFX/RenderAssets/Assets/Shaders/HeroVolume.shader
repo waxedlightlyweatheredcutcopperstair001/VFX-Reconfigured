@@ -30,6 +30,7 @@ Shader "VolumetricExplosionFX/HeroVolume"
         _Dust ("Colour of the body's dust", Vector) = (0.62,0.56,0.46,0)
         _Look0 ("Look: shape, turbulence, temperature gradient, flame heat", Vector) = (1,0,0,0)
         _Look1 ("Look: smoke opacity, soot darkness", Vector) = (1,0,0,0)
+        _Reconf ("VFX Reconfigured: edge glow (x)", Vector) = (0,0,0,0)
         _Steps ("March steps across the burning region", Float) = 32
         _NoiseTex ("Original tileable noise", 3D) = "" {}
         _FireSimGround ("Baked fireball on the ground", 3D) = "" {}
@@ -81,7 +82,7 @@ Shader "VolumetricExplosionFX/HeroVolume"
             float4 _SimShape;   // 1.1 per-explosion character: vertical scale, lean x, lean z (per unit height), warp amplitude
             sampler2D _BlueNoise;
             float4 _Shell, _Core, _Cloud, _Context, _LightDirection, _SunColor, _Fire, _Smoke, _Bounds;
-            float4 _L0, _L1, _L2, _L3, _L4, _A0, _A1, _A2, _A3, _A4, _D0, _D1, _D2, _D3, _D4, _Motion, _Dust, _Look0, _Look1;
+            float4 _L0, _L1, _L2, _L3, _L4, _A0, _A1, _A2, _A3, _A4, _D0, _D1, _D2, _D3, _D4, _Motion, _Dust, _Look0, _Look1, _Reconf;
             float _Steps;
             #ifdef VEFX_SIM
             float4 _VefxFire0, _VefxFire1, _VefxFireRange;   // the two strongest fires (world position, glow; ranges in m)
@@ -583,6 +584,16 @@ Shader "VolumetricExplosionFX/HeroVolume"
                 temp*=lerp(lerp(0.74,0.93,smoothstep(0.4,0.9,heat)),1.1,smoothstep(0.25,0.8,gas));
                 // While the fireball is hot its burning edge glows orange instead of reading as a brown outline.
                 temp=max(temp,0.4*smoothstep(0.45,0.95,heat)*saturate(gas*3)*(0.75+0.5*fine));
+                // VFX Reconfigured: the glowing gas sits at the top and outer edge of the rising plume; lower down and deeper
+                // inside it is darker, smoky gas (bright edges over a dark body, as in an orbital strike). _Reconf.x is the
+                // strength (0: VEFX 1.1.1's look). Not for a nuclear fireball, which is white-hot all through.
+                [branch] if(_Reconf.x>0.001&&_Nuke.x<0.5)
+                {
+                    float upper=saturate((p.y-_L0.y)/max(_L0.w,1e-4)*0.9+0.45);
+                    float outer=saturate(1.15-gas*1.25);
+                    float edgeMask=saturate(0.25+1.1*upper*(0.55+0.6*outer));
+                    temp*=lerp(1,edgeMask,_Reconf.x);
+                }
                 temp=saturate(temp)*smoothstep(0,0.14,heat);
                 // A nuclear fireball is white-hot at first, all through (its surface far hotter than any chemical flame).
                 temp=lerp(temp,max(temp,0.97*saturate(gas*2.5)),_Nuke.w);

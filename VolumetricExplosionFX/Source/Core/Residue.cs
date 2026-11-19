@@ -76,7 +76,9 @@ namespace VolumetricExplosionFX.Core
             double R=Math.Max(VolumeEvolution.FireballRadius(plan),0);
             double burnable=Numbers.Clamp(plan.BurnableKg,0,1e7);
             // VFX Reconfigured: only fuel tanks (and solid boosters) and batteries leave a fire.
-            bool fuelled=plan.PartKind==PartKind.LiquidTank||plan.PartKind==PartKind.SolidBooster||plan.PartKind==PartKind.Battery||plan.PartKind==PartKind.PressurizedTank;
+            // (A collapsing KSC building isn't a part: a fuel store still burns on.)
+            bool fuelled=!plan.FromPart||plan.PartKind==PartKind.LiquidTank||plan.PartKind==PartKind.SolidBooster||plan.PartKind==PartKind.Battery||plan.PartKind==PartKind.PressurizedTank
+                ||plan.Warhead==WarheadKind.Structure;
             if(air>0.1&&fire>0.08&&burnable>5&&fuelled)
             {
                 double seconds=(4+9*Math.Log10(1+burnable/200))*(water?0.5:1)*(0.4+0.6*air);

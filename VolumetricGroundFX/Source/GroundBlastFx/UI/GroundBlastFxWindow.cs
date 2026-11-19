@@ -27,6 +27,8 @@ namespace GroundBlastFx.UI
 
         private void AddButton()
         {
+            // VFX Reconfigured: the ground settings are a page of the one settings window (Ground effects); no second button.
+            if (VFXReconfigured.ModPaths.SingleToolbarButton) return;
             if (_button != null || ApplicationLauncher.Instance == null) return;
             if (_icon == null) _icon = AppIcon.Create();
             _button = ApplicationLauncher.Instance.AddModApplication(

@@ -216,12 +216,13 @@ namespace VolumetricExplosionFX.Core
             s.Cloud=Numbers.Clamp(cold,0,1);
             s.Vapor=s.Cloud>0?1:0;
             s.Rise=Math.Min(age*0.05,0.3)*air*k;
-            s.Dust=Numbers.Clamp(Math.Max(dust,spray)*(0.3+0.7*air)*Smooth(0,0.4,age)*Math.Exp(-age/(tau*5)),0,1);
+            // (VFX Reconfigured: the dust the blast lifts off the ground keeps real time, like the shockwave that raises it.)
+            s.Dust=Numbers.Clamp(Math.Max(dust,spray)*(0.3+0.7*air)*Smooth(0,0.4,real)*Math.Exp(-real/(tau*5)),0,1);
             // 1.1: the dust the blast lifts is this volume's skirt (no sprite ring): thicker, and it hangs for seconds.
             if(look.Modern&&UseSim&&ground&&!water)
-                s.Dust=Numbers.Clamp(Math.Max(dust,spray)*(0.3+0.7*air)*1.35*Smooth(0,0.35,age)*Math.Exp(-age/(tau*14)),0,1)*
+                s.Dust=Numbers.Clamp(Math.Max(dust,spray)*(0.3+0.7*air)*1.35*Smooth(0,0.35,real)*Math.Exp(-real/(tau*14)),0,1)*
                     (plan.Warhead==WarheadKind.Nuke?0.25:1)*   // a nuke's dust is its stem, skirt and ground wave (this disc spans the dome)
-                    (air<0.05?Math.Exp(-age/1.5):1);   // in vacuum the ejecta fly off on ballistic arcs and thin out: no hanging haze
+                    (air<0.05?Math.Exp(-real/1.5):1);   // in vacuum the ejecta fly off on ballistic arcs and thin out: no hanging haze
             double R=layout!=null?layout.RadiusMeters:FireballRadius(plan), tf=FireballDuration(plan)*(layout!=null?layout.Tempo:1);
             if(R>0&&fire>0.02&&layout!=null) EvaluateFireball(ref s,plan,layout,age,R,tf,air,fire,ground||water,box);
             s.SimShape=s.Sim&&layout!=null?new Vec4(layout.SimTall,layout.SimLeanX,layout.SimLeanZ,layout.SimWarp):new Vec4(1,0,0,1);
@@ -283,6 +284,7 @@ namespace VolumetricExplosionFX.Core
         /// <summary>VFX Reconfigured: no glow after the glow time (real seconds); then the smoke's opacity halves every half-life.</summary>
         static void ApplyReconfig(ref VolumeState s,FxPlan plan,double real)
         {
+            s.Age=real;   // shimmer, ground wave and noise drift run on real time (the evolution above used the faster clock)
             double glow=Reconfig.GlowLeft(plan,real);
             s.Heat*=glow; s.Glow*=glow; s.FireHeat*=glow; s.Pulse*=glow;
             for(int i=0;i<BlastLayout.Count;i++) { LobeState l=s.Lobe(i); l.Heat*=glow; s.SetLobe(i,l); }
@@ -493,15 +495,19 @@ namespace VolumetricExplosionFX.Core
             if(surface&&after>0) origin=origin+Up*rise;
             // Each explosion's own shape: taller or squatter, and leaning (shear with height); the shader applies the same.
             double lift=cy*scale*tall;
+            // VFX Reconfigured: where the cap's underside is cut. A ground burst's bake has its stem and wake below the cap (cut at
+            // 0.68 of its height); an air burst has none, and that cut gave it a sharp, flat bottom: keep its rounded underside.
+            int usedRun=FireSim.Usable(surface,surface?layout.SimRun:layout.SimAirRun);
+            double capCut=!FireSim.IsNukeRun(usedRun)?0.55:usedRun==FireSim.NukeAirRun?0.08:0.68;
             var span=new Vec3(origin.X+(cx*cos-cz*sin)*scale+layout.SimLeanX*lift,origin.Y+lift,origin.Z+(cx*sin+cz*cos)*scale+layout.SimLeanZ*lift);
             double reach=r*scale*Math.Max(tall,1)*(1+Math.Sqrt(layout.SimLeanX*layout.SimLeanX+layout.SimLeanZ*layout.SimLeanZ));
             // The heading vector carries the stretch in its length (the shader divides the cross axis by its square).
             return new LobeState { Sim=true, Center=span*(1/box), Radius=Math.Max(reach,1e-3)/box, Axis=Up, Stretch=1, Heat=heat,
                 SimOrigin=origin*(1/box), SimCos=cos*stretch, SimSin=sin*stretch, SimScale=scale/box*(mirror?-1:1), SimFrame=frame, SimAfter=after,
                 // The nuclear run's gas reaches down to the ground (its wake, cut by the shader): its cap is the top third.
-                SimCapLow=(origin.Y+(boxes[2]+(FireSim.IsNukeRun(FireSim.Usable(surface,surface?layout.SimRun:layout.SimAirRun))?0.68:0.55)*(boxes[3]-boxes[2]))*scale*tall)/box,
+                SimCapLow=(origin.Y+(boxes[2]+capCut*(boxes[3]-boxes[2]))*scale*tall)/box,
                 SimCapTop=(origin.Y+boxes[3]*scale*tall)/box,
-                SimCapFrac=(boxes[2]+0.68*(boxes[3]-boxes[2]))/Math.Max(v.Height,1e-3),
+                SimCapFrac=(boxes[2]+(FireSim.IsNukeRun(usedRun)?capCut:0.68)*(boxes[3]-boxes[2]))/Math.Max(v.Height,1e-3),
                 SimCapRadius=0.5*Math.Max(boxes[1]-boxes[0],boxes[5]-boxes[4])*scale/box };
         }
         // A nuclear fireball's own sequence (Glasstone & Dolan ch. II): a white-hot sphere for the first moments; then, on a
@@ -518,7 +524,8 @@ namespace VolumetricExplosionFX.Core
             double stemReach=kind==NukeKind.Surface?1:kind==NukeKind.LowAir?Numbers.Clamp(1.35-0.22*layout.NukeGround/Rn,0.25,1):0;
             double stem=kind==NukeKind.Surface?Smooth(0.1*tf,1.8*tf,age):stemReach*Smooth(0.5*tf,4*tf,age);
             double stemDensity=kind==NukeKind.Surface?1:0.55;
-            double skirt=kind==NukeKind.Surface?1:kind==NukeKind.LowAir?0.8*Math.Exp(-layout.NukeGround/(2.5*Rn))*Smooth(0.2*tf,1.2*tf,age):0;
+            double skirt=kind==NukeKind.Surface?1:kind==NukeKind.LowAir?0.8*Math.Exp(-layout.NukeGround/(2.5*Rn))*Smooth(0.2*tf,1.2*tf,age):
+                0.4*Math.Exp(-layout.NukeGround/(4*Rn))*Smooth(0.3*tf,1.5*tf,age);   // VFX Reconfigured: the Mach stem's dust ring
             // Condensation rings around the stem in moist air (several at megaton yields), for a while.
             // (Only in moist air: in dry air a faint one read as a second, smaller cap under the first.)
             double rings=Smooth(0.6*tf,1.4*tf,age)*(1-Smooth(3.5*tf,9*tf,age))*(layout.NukeHumid?1:0)*(kind==NukeKind.HighAir?0:1);

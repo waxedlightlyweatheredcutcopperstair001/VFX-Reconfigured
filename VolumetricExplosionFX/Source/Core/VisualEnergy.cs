@@ -6,6 +6,8 @@ namespace VolumetricExplosionFX.Core
     public sealed class FxPlan
     {
         public PartKind PartKind;
+        // VFX Reconfigured: built from a destroyed part (VisualEnergy.Calculate), so PartKind is known.
+        public bool FromPart;
         public ResourceKind Contents;
         public EventKind Kind;
         public double KineticJoules, VisualEnergyScore, Radius, FireFraction, SmokeFraction, VaporFraction, ElectricFraction, ExpansionSpeed, Lifetime;
@@ -86,7 +88,7 @@ namespace VolumetricExplosionFX.Core
             sr+=(0.6-sr)*brown; sg+=(0.36-sg)*brown; sb+=(0.18-sb)*brown;
             Vec3 dust=BodyLook.Dust(p.Environment!=null?p.Environment.Body:null);
             return new FxPlan { DustR=dust.X, DustG=dust.Y, DustB=dust.Z,
-                PartKind=partKind, Contents=contents, Kind=e.Kind, Atmosphere=atmosphere, ImpactSpeed=speed,
+                PartKind=partKind, FromPart=true, Contents=contents, Kind=e.Kind, Atmosphere=atmosphere, ImpactSpeed=speed,
                 KineticJoules=kinetic, VisualEnergyScore=score,
                 Hydrogen=Numbers.Clamp(hydrogenMass/fuelTotal,0,1), Mono=Numbers.Clamp(monoMass/fuelTotal,0,1), Brown=Numbers.Clamp(brown,0,1), OreKg=oreMass,
                 Fill=room>0?Numbers.Clamp(held/room,0,1):0,

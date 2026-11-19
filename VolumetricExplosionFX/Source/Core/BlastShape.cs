@@ -338,7 +338,10 @@ namespace VolumetricExplosionFX.Core
             {
                 double kt=Math.Max(plan.WarheadTnt/1e6,0.001), Rn=VolumeEvolution.FireballRadius(plan);
                 L.NukeGround=ground||water?0:Math.Max(plan.BurstHeight,0);
-                L.Nuke=ground||water?NukeKind.Surface:L.NukeGround<5*Rn?NukeKind.LowAir:NukeKind.HighAir;
+                // VFX Reconfigured: a low air burst (dust stem, skirt) only below 2.5 fireball radii; higher, the fireball rises
+                // clear of the ground into a rolling cloud with no stem (Glasstone & Dolan 2.09-2.10, 2.128: the fireball stops
+                // touching the ground at about one fireball radius). It was 5 radii: a 20 kt burst at 900 m grew a stem.
+                L.Nuke=ground||water?NukeKind.Surface:L.NukeGround<2.5*Rn?NukeKind.LowAir:NukeKind.HighAir;
                 L.NukeThermo=kt>=300; L.NukeHumid=true;   // (condensation rings and collars)
                 L.NukeWilson=true;
                 // The cloud climbs at 100-150 m/s for a megaton, slower for smaller yields, and keeps climbing for minutes

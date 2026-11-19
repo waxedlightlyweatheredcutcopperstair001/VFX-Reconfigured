@@ -165,7 +165,9 @@ namespace VolumetricExplosionFX.Core
             // The dust skirt at the stem's foot: a broad, low cloud of dirt that billows out from ground zero.
             // (On water it is the base surge: a ring of white mist rolling out over the sea, wider and longer-lived.)
             double skirtR=stemR*(1.5+(water?4.2:2.1)*(1+1.5*mega)*Smooth(0.05*tf,(water?5:4)*tf,age));
-            double skirt=kind==NukeKind.Surface?1:kind==NukeKind.LowAir?0.7*Math.Exp(-hb/(2.5*Rf)):0;
+            // (VFX Reconfigured: a higher air burst still raises a low ring of dust that the Mach stem pushes out over the
+            // ground, separate from the cloud far above; fainter the higher it was. It had none.)
+            double skirt=kind==NukeKind.Surface?1:kind==NukeKind.LowAir?0.7*Math.Exp(-hb/(2.5*Rf)):0.35*Math.Exp(-hb/(4*Rf));
             skirt*=Smooth(0.03*tf,0.4*tf,age);
             skirt*=1-Smooth(0.3*life,0.65*life,age);
             if(vacuum) { skirtR=Rf*(1+3*Smooth(0.05*tf,1.5*tf,age)); skirt=kind==NukeKind.Surface?0.6*Smooth(0.02*tf,0.2*tf,age)*(1-Smooth(0.6*tf,3.5*tf,age)):0; }

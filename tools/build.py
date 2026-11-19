@@ -59,8 +59,8 @@ def main():
     args += [f'/reference:{r}' for r in refs]
     args += [str(s) for s in sources()]
     rsp = out / 'csc.rsp'
-    rsp.write_text('\n'.join(f'"{a}"' for a in args[2:]) + '\n')
-    result = subprocess.run([dotnet, str(csc), f'@{rsp}'], cwd=ROOT, text=True, capture_output=True)
+    rsp.write_text('\n'.join(f'"{a}"' for a in args[3:]) + '\n')
+    result = subprocess.run([dotnet, str(csc), '/noconfig', f'@{rsp}'], cwd=ROOT, text=True, capture_output=True)
     lines = [l for l in (result.stdout + result.stderr).splitlines() if l.strip()]
     errors = [l for l in lines if ': error ' in l]
     for l in lines:

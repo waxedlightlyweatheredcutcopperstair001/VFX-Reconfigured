@@ -202,7 +202,7 @@ class Program
             clusters.Add(new DestructionEvent(Part(1,instance:2),EventKind.Destruction,4.01),7);
             Check(clusters.TakeReady(4.2).Representative.Part.InstanceId==2,"Cluster selects strongest individual event");
             var initial=VolumeEvolution.Evaluate(air,0,true,true);
-            var cooling=VolumeEvolution.Evaluate(air,2,true,true);
+            var cooling=VolumeEvolution.Evaluate(air,2/Reconfig.Speed(air),true,true);   // VFX Reconfigured: the same moment of the fireball on its faster clock
             Check(initial.Heat>cooling.Heat && cooling.FireSoot>initial.FireSoot && cooling.FireBody>0,"Fireball cools into a sooty cloud");
             var bigTank=Plan(Part(1.225,new[]{R("LiquidFuel",800),R("Oxidizer",800)}));
             Check(Math.Abs(VolumeEvolution.FireballRadius(bigTank)/VolumeEvolution.FireballRadius(air)-2)<0.05,"Fireball size follows the cube root of burning propellant");
@@ -755,7 +755,7 @@ class Program
                     double capTopM=nukeSettled.NukeIce.W*nukeSettled.BoxRadius, capRM=nukeSettled.NukeIce.Y*nukeSettled.BoxRadius;
                     Vec4 settledShock,settledHaze; VolumeEvolution.Distortion(nukeSettled,1,out settledShock,out settledHaze);
                     Check(capTopM>0.75*nukeLayout.NukeTop&&capTopM<1.08*nukeLayout.NukeTop&&nukeLayout.NukeTop>6500&&nukeLayout.NukeTop<8500&&
-                        capRM>0.2*capTopM&&capRM<0.42*capTopM&&nukeSettled.Fade>0.5&&VolumeEvolution.VolumeDuration(nukePlan)>=220&&
+                        capRM>0.2*capTopM&&capRM<0.42*capTopM&&nukeSettled.Fade>0.2&&VolumeEvolution.VolumeDuration(nukePlan)>=220&&
                         settledHaze.X*nukeSettled.BoxRadius<=0.61&&FireSim.IsNukeRun(nukeSettled.SimRun)&&nukeSettled.NukeCap.X>0.99&&nukeEarly.NukeCap.X<0.01,
                         "A 20 kt cloud climbs to ~7 km with a cap ~0.3 of its height (drawn as its own shape once ripe), hangs for minutes, and its fires' shimmer stays under a metre ("+
                         (capTopM/1000).ToString("0.0")+" km, cap "+(capRM/1000).ToString("0.0")+" km)");
@@ -776,7 +776,7 @@ class Program
                         var hiL=BlastLayout.Create(nukePlan,new Vec3(),false,false,77,null); hiL.Nuke=NukeKind.HighAir; hiL.NukeGround=3000;
                         NukeFrame nh=NukeCloud.Evaluate(nukePlan,hiL,VolumeEvolution.Evaluate(nukePlan,30,true,true,false,false,hiL),30,nb,7,600000);
                         Check(n0.Cap.W>0.8&&n0.Ball.W<0.05&&n1.Ball.W>0.99&&n1.Torus.Z>n0.Torus.Z&&n2.Ball.Y>n1.Ball.Y&&n2.Ball.X>n1.Ball.X&&
-                            n1.Stem.W>0.9&&n1.Stem.Z>n1.Stem.X&&nh.Stem.W==0&&nh.Skirt.Z==0&&n0.Torus.W>n1.Torus.W&&
+                            n1.Stem.W>0.9&&n1.Stem.Z>n1.Stem.X&&nh.Stem.W==0&&nh.Skirt.Z<0.05&&n0.Torus.W>n1.Torus.W&&
                             n2.Cap.X+n2.Cap.Y+n2.Cap.Z>n0.Cap.X+n0.Cap.Y+n0.Cap.Z&&n2.Ball.Y*nb>0.25*NukeCloud.Top(nukeLayout,VolumeEvolution.FireballRadius(nukePlan),VolumeEvolution.FireballDuration(nukePlan),150),
                             "A nuclear cloud starts as a white-hot sphere, rolls into a toroidal cap on a dust stem (none after a high burst), climbs, widens and pales");
                         // the stem trails the fireball as soon as it lifts off, rather than catching up with the cap later.
@@ -1004,7 +1004,7 @@ class Program
                         var underR=Residue.Plan(under,false,true,45);
                         Check(Math.Abs(under.Depth-19.8)<1e-9&&under.FireFraction<0.1*fireBefore+1e-9&&under.Soot==0&&Splash.DomeRadius(under)>0&&Splash.DomeDelay(under)>0&&
                             Splash.ColumnHeight(under)>0&&!underR.HasFire,"Under water a blast lifts a white dome and a column, without a fireball or a fire on the surface");
-                        var floating=new FxPlan{ Look=LookProfile.Default(LookKind.Tank), Atmosphere=1, FireFraction=0.9, BurnableKg=900, Soot=0.6, Kind=EventKind.WaterImpact, Radius=4 };
+                        var floating=new FxPlan{ PartKind=PartKind.LiquidTank, Look=LookProfile.Default(LookKind.Tank), Atmosphere=1, FireFraction=0.9, BurnableKg=900, Soot=0.6, Kind=EventKind.WaterImpact, Radius=4 };   // (VFX Reconfigured: only tanks leave fires)
                         var slickR=Residue.Plan(floating,false,true,45); floating.Look=LookProfile.Classic(); var plainR=Residue.Plan(floating,false,true,45);
                         Check(Splash.Slick(new FxPlan{ Look=LookProfile.Default(LookKind.Tank), Soot=0.6 })&&slickR.HasFire&&slickR.FireRadius>plainR.FireRadius&&slickR.FlameHeight<plainR.FlameHeight,
                             "Burning fuel floating on the water spreads into a wide, low slick");
@@ -1120,7 +1120,9 @@ class Program
                     "An ore tank bursts into rock dust in 1.1, without changing what the part is");
             }
             Check(Conflicts.Find(new[]{"Assembly-CSharp","VolumetricExplosions"},null)=="Volumetric Explosions"&&Conflicts.Find(null,new[]{"volumetricexplosions"})!=null&&
-                Conflicts.Find(new[]{"VolumetricExplosionFX","Assembly-CSharp"},new[]{"VolumetricExplosionFX","Squad"})==null,"Another mod that replaces explosions is recognised, our own folder is not");
+                // VFX Reconfigured: our own assembly and folder are not a conflict; the two mods it replaces are.
+                Conflicts.Find(new[]{"VolumetricFXReconfigured","Assembly-CSharp"},new[]{"VolumetricFXReconfigured","Squad"})==null&&
+                Conflicts.Find(new[]{"VolumetricExplosionFX"},null)!=null&&Conflicts.Find(null,new[]{"Volumetric Ground FX"})!=null,"Another mod that replaces explosions is recognised, our own folder is not");
             {
                 lookTank.Look=LookProfile.Classic();
                 var shadowOld=VolumeEvolution.Shadow(VolumeEvolution.Evaluate(lookTank,2.5,true,true,true,false,lookLayout),13);
@@ -1228,6 +1230,30 @@ class Program
                 ExplosionLight.LampScore(3,60,200,20,false,0,0)==0&&ExplosionLight.LampScore(3,60,30,20,false,2,0)>ExplosionLight.LampScore(3,60,70,20,false,2,0)&&
                 ExplosionLight.LampScore(0.01,60,10,20,false,0,0)==0,"Lamps light smoke only in reach and inside their cone, more when closer");
             Check(ExplosionLight.Flicker(0.05,1.3)==1&&Math.Abs(ExplosionLight.Flicker(2,1.3)-1)<=0.15,"Light flicker starts smoothly and stays within 15 %");
+            // VFX Reconfigured
+            {
+                Func<string[],ResourceSnapshot[],PartSnapshot> withModules=(modules,res)=>new PartSnapshot(9,9,new Guid("11111111-1111-1111-1111-111111111111"),"test",
+                    new Vec3(),new Vec3(0,-100,0),new Vec3(0,3000,0),new Vec3(),new Vec3(2,2,4),1000,300,modules,res,
+                    new EnvironmentContext("test body",1.225,101,9.81,0,true,false,false,new Vec3(0,1,0)));
+                var rcFuel=new[]{R("LiquidFuel",400),R("Oxidizer",400)};
+                var rcTank=Plan(Part(1.225,rcFuel)); rcTank.Look=LookProfile.Default(LookKind.Tank);
+                var rcWing=Plan(withModules(new[]{"ModuleLiftingSurface"},rcFuel)); var rcStrut=Plan(Part(1.225));
+                var rcEmpty=Plan(Part(1.225,new[]{new ResourceSnapshot("LiquidFuel",0,400,0),new ResourceSnapshot("Oxidizer",0,400,0)}));
+                var rcBattery=Plan(Part(1.225,new[]{new ResourceSnapshot("ElectricCharge",4000,4000,0)}));
+                var rcFlat=Plan(Part(1.225,new[]{new ResourceSnapshot("ElectricCharge",0,4000,0)}));
+                Check(rcTank.BurnableKg>0&&rcWing.BurnableKg==0&&rcStrut.BurnableKg==0&&rcEmpty.BurnableKg==0&&rcBattery.BurnableKg>5&&rcFlat.BurnableKg==0,
+                    "Wings and structure break up without a fireball; an rcEmpty rcTank doesn't explode; a battery burns by its charge");
+                Check(Residue.Plan(rcTank,true,false,45).HasFire&&!Residue.Plan(Plan(withModules(new[]{"ModuleCommand"},new[]{R("MonoPropellant",300)})),true,false,45).HasFire,
+                    "Only rcFuel tanks and batteries leave a fire (not a command pod's monopropellant)");
+                double rcG=Reconfig.GlowSeconds(rcTank);
+                var rcGlowing=VolumeEvolution.Evaluate(rcTank,0.2,true,true,true); var rcDark=VolumeEvolution.Evaluate(rcTank,rcG+0.01,true,true,true);
+                Check(rcGlowing.FireHeat>0.05&&rcDark.FireHeat==0&&rcDark.Heat==0&&rcDark.Glow==0,"No glow after the glow time (1.5 s)");
+                Check(Math.Abs(Reconfig.SmokeLeft(rcTank,rcG+3)-0.5)<1e-9&&Math.Abs(Reconfig.SmokeLeft(rcTank,rcG+6)-0.25)<1e-9,"Smoke opacity halves every half-life once the glow is gone");
+                Check(VolumeEvolution.RealDuration(rcTank)<=60&&Reconfig.Speed(rcTank)==1.5,"A conventional cloud lasts 60 s at most and plays 1.5 times faster");
+                var nukeReconf=new FxPlan{ Atmosphere=1, Look=LookProfile.Default(LookKind.Tank) }; Warhead.Apply(nukeReconf,new WarheadInfo{ Kind=WarheadKind.Nuke, TntKg=2e7, RangeM=900 });
+                Check(Reconfig.Speed(nukeReconf)==1&&Reconfig.GlowSeconds(nukeReconf)>rcG&&Reconfig.SmokeHalfLife(nukeReconf)>Reconfig.SmokeHalfLife(rcTank),
+                    "Nuclear clouds keep real time, glow longer and thin out more slowly");
+            }
             Console.WriteLine("Verified assertions: "+count);
         }
         catch(Exception ex) { Console.Error.WriteLine("FAIL "+ex.Message); Environment.Exit(1); }

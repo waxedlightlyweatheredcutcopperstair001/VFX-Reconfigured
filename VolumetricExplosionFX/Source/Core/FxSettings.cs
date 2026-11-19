@@ -17,7 +17,7 @@ namespace VolumetricExplosionFX.Core
         public int Profile=-1;
         public bool Breakup=false;
         // VFX Reconfigured: explosion timing and look (see Reconfig).
-        public double ExplosionSpeed=1.5, GlowSeconds=1.5, SmokeHalfLife=3, SmokeMaxSeconds=60, NukeGlowSeconds=12, NukeSmokeHalfLife=40;
+        public double ExplosionSpeed=1.5, GlowSeconds=1.5, SmokeHalfLife=3, SmokeMaxSeconds=60, NukeGlowSeconds=12, NukeSmokeHalfLife=90;
         public double SmokeOpacity=1, EdgeGlow=1;
         public bool PartDebris=true, Residue=true;
         public Quality Quality=Quality.Ultra;

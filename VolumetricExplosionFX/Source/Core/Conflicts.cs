@@ -6,7 +6,11 @@ namespace VolumetricExplosionFX.Core
     public static class Conflicts
     {
         // Assembly or GameData folder name, and the name players know it by.
-        static readonly string[,] Known={ {"VolumetricExplosions","Volumetric Explosions"} };
+        // VFX Reconfigured: the two mods it replaces count as well (their assemblies, or their GameData folders).
+        static readonly string[,] Known={ {"VolumetricExplosions","Volumetric Explosions"},
+            {"VolumetricExplosionFX","Volumetric Explosion FX (VFX Reconfigured replaces it)"},
+            {"GroundBlastFx","Volumetric Ground FX (VFX Reconfigured replaces it)"},
+            {"Volumetric Ground FX","Volumetric Ground FX (VFX Reconfigured replaces it)"} };
         public static string Find(IEnumerable<string> assemblies,IEnumerable<string> folders)
         {
             var seen=new HashSet<string>(StringComparer.OrdinalIgnoreCase);

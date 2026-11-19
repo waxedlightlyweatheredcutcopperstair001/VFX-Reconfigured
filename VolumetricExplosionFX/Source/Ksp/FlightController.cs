@@ -70,7 +70,7 @@ namespace VolumetricExplosionFX.Ksp
                 settings.PhotoMode=0;   // a frozen photo mode left on does not carry over to the next flight
                 Debug.Log("[VEFX] Scene wind "+Aftermath.SceneWind.Length.ToString("0.0")+" m/s");
                 nextSummary=Time.unscaledTime+5;
-                Debug.Log("[VEFX] Volumetric Explosion FX "+Version+" loaded in flight.");
+                Debug.Log("[VEFX] Volumetric FX Reconfigured (explosions; based on Volumetric Explosion FX "+Version+") loaded in flight.");
                 var names=new List<string>();
                 foreach(var a in AppDomain.CurrentDomain.GetAssemblies())
                 {

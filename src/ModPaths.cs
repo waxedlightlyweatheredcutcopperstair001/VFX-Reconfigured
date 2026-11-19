@@ -14,6 +14,9 @@ namespace VFXReconfigured
         public const string FolderName = "VolumetricFXReconfigured";
         public const string DisplayName = "Volumetric FX Reconfigured";
 
+        /// <summary>The ground effects' settings live in the explosion settings window (no separate toolbar button).</summary>
+        public static readonly bool SingleToolbarButton = true;
+
         static string modRoot;
 
         public static string ModRoot
