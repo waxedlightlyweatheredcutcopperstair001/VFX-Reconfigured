@@ -8,7 +8,7 @@ namespace VolumetricExplosionFX.Core
         {
             double air=Numbers.Clamp(plan.Atmosphere,0,1);
             if(air<0.05||plan.FireFraction<0.05||VolumeEvolution.FireballRadius(plan)<=0) return double.PositiveInfinity;
-            return Math.Max(0.75*VolumeEvolution.FireballDuration(plan)*tempo,0.55*VolumeEvolution.VolumeDuration(plan));
+            return Math.Max(0.75*VolumeEvolution.FireballDuration(plan)*tempo/Reconfig.Speed(plan),0.55*VolumeEvolution.RealDuration(plan));   // VFX Reconfigured: real seconds
         }
         // 1.1: one breeze for the whole scene (set once per flight), so every column of smoke leans the same way; each event
         // only varies it a little. Zero: no scene wind (the 1.0 per-event breeze).

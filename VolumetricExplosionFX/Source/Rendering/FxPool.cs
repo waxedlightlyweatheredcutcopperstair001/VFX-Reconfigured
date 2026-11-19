@@ -472,7 +472,7 @@ namespace VolumetricExplosionFX.Rendering
         void ApplyPhotoSpeed()
         {
             photoApplied=photo;
-            for(int i=0;i<slots.Length;i++) if(slots[i]!=null) { Speed(slots[i].Root,photo); Speed(slots[i].DebrisRoot,photo); }
+            for(int i=0;i<slots.Length;i++) if(slots[i]!=null) { Speed(slots[i].Root,photo); Speed(slots[i].DebrisRoot,photo); slots[i].SetParticleClock(photo); }
             debris.SetSpeed(photo);
             if(hits!=null) hits.SetSpeed(photo);
         }

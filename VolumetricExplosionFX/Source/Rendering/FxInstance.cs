@@ -144,7 +144,7 @@ namespace VolumetricExplosionFX.Rendering
         internal Vector3 SmokeCenter { get { return Root.transform.position+Root.transform.up*(float)(volume.State.BoxRadius*0.5); } }
         internal float SmokeSize { get { return (float)volume.State.BoxRadius; } }
         internal double Score { get { return plan==null?0:plan.VisualEnergyScore*(Lingering?0.25:1); } }
-        bool Lingering { get { return plan!=null&&age>Math.Max(VolumeEvolution.VolumeDuration(plan),groundFireEnd)+2; } }
+        bool Lingering { get { return plan!=null&&age>Math.Max(VolumeEvolution.RealDuration(plan),groundFireEnd)+2; } }
         internal float Age { get { return age; } }
         internal bool Nuclear { get { return plan!=null&&plan.Warhead==WarheadKind.Nuke; } }
         internal double FireballRadius { get { return plan==null?0:VolumeEvolution.FireballRadius(plan); } }
@@ -406,6 +406,7 @@ namespace VolumetricExplosionFX.Rendering
                 Air=air, DomeRadius=domeRadius, Gravity=(float)s.Environment.Gravity,
                 ImpactSpeed=(float)Math.Abs(Vec3.Dot(s.SurfaceVelocity,s.Environment.Up)), Velocity=localVelocity,
                 Floor=floor, FloorWet=wet, Sunlit=(float)FxPool.Starlight(anchor), DebrisBudget=debrisBudget, Seed=seed, GasRate=gasRate, SplashVolume=splash3d });
+            particles.SetClock((float)FxSettings.PhotoSpeed(settings.PhotoMode));   // VFX Reconfigured: faster flames and smoke
             Stage(3);
             bool burning=settings.Explosions&&plan.FireFraction>0.05;
             lit=light&&settings.Lighting&&(dome?VolumeEvolution.LightIntensity(volume.State)>0.05:burning);
@@ -437,6 +438,8 @@ namespace VolumetricExplosionFX.Rendering
             }
             Root.SetActive(false); DebrisRoot.SetActive(false);
         }
+        /// <summary>VFX Reconfigured: reapply the particle clocks after photo mode changed every system's speed.</summary>
+        internal void SetParticleClock(float photo) { if(plan!=null) particles.SetClock(photo); }
         // Secondary explosions in the burning wreck, handed out as they fall due: where (world) and how big (m).
         readonly Aftermath.Pop[] pops=new Aftermath.Pop[5];
         int popCount, popNext;
@@ -637,7 +640,7 @@ namespace VolumetricExplosionFX.Rendering
             bool refracting=volume!=null&&volume.Distorting;
             double residueEnd=Math.Max(residue.HasFire?residue.SmokeSeconds:0,hasScorch?residue.ScorchSeconds:0);
             bool lingering=age<residueEnd;
-            double limit=Math.Max(Math.Max(VolumeEvolution.VolumeDuration(plan),groundFireEnd)+4,Math.Max(residueEnd+14,particles.Horizon));
+            double limit=Math.Max(Math.Max(VolumeEvolution.RealDuration(plan),groundFireEnd)+4,Math.Max(residueEnd+14,particles.Horizon));
             if(splashVolume!=null) limit=Math.Max(limit,splashVolume.Duration+1);
             if(age>limit||(!HasVolume&&!refracting&&!alive&&!particles.Pending&&groundFire<=0&&!lingering))
             { Clear(); return false; }

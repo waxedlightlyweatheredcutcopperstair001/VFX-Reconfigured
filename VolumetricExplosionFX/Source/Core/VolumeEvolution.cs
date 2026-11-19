@@ -169,7 +169,10 @@ namespace VolumetricExplosionFX.Core
         { return Evaluate(plan,age,explosions,burst,ground,water,BlastLayout.Default(plan,ground&&!water,water)); }
         public static VolumeState Evaluate(FxPlan plan,double age,bool explosions,bool burst,bool ground,bool water,BlastLayout layout)
         {
-            age=Numbers.Clamp(age,0,400);   // a nuclear cloud lives up to 330 s (others at most ~36 s)
+            // VFX Reconfigured: 'real' is the time since the blast; 'age' is the fireball and smoke's own clock, faster by the
+            // explosion speed setting. The shell, shockwave and condensation flash keep real time.
+            double real=Numbers.Clamp(age,0,400);
+            age=Numbers.Clamp(real*Reconfig.Speed(plan),0,400);   // a nuclear cloud lives up to 330 s (others at most ~36 s)
             double air=Numbers.Clamp(plan.Atmosphere,0,1);
             ground=ground&&!water;
             double fire=explosions?Numbers.Clamp(plan.FireFraction,0,1):0;
@@ -189,16 +192,16 @@ namespace VolumetricExplosionFX.Core
                 SmokeR=plan.SmokeR, SmokeG=plan.SmokeG, SmokeB=plan.SmokeB, Roughness=layout!=null?layout.Roughness:0.6,
                 WhiteFlame=Numbers.Clamp(plan.WhiteFlame,0,1), DustR=plan.DustR, DustG=plan.DustG, DustB=plan.DustB, LightScale=look.LightIntensity, Modern=look.Modern };
             if(ore>0) { Vec3 rock=Chemistry.OreColour(new Vec3(plan.DustR,plan.DustG,plan.DustB)); s.DustR=rock.X; s.DustG=rock.Y; s.DustB=rock.Z; }
-            double decelerated=1-Math.Exp(-age/(0.35*tau)), coasting=Math.Min(1,age/(tau*0.6));
+            double decelerated=1-Math.Exp(-real/(0.35*tau)), coasting=Math.Min(1,real/(tau*0.6));
             s.ShellRadius=Math.Max(0.03,domeLocal*(air*decelerated+(1-air)*coasting));
-            s.ShellThickness=(0.05+0.05*Smooth(0,4*tau,age))*k;
+            s.ShellThickness=(0.05+0.05*Smooth(0,4*tau,real))*k;
             double shellBase=(air*strength*(ground||water?1:0.7)+(1-air)*0.1*Math.Max(Math.Max(fire,kinetic),vapor))*(0.35+0.65*strength);
             shellBase*=1-0.3*fire;
             shellBase*=water?0.2:1-0.45*air;
             double shellLife=tau*(0.5+0.1*air);
-            s.ShellOpacity=Numbers.Clamp(shellBase*look.ShockwaveStrength*(look.Modern?0.07:1)*Smooth(0,0.03,age)*Math.Exp(-age/shellLife),0,1);
-            s.ShellErosion=0.85*Smooth(tau*0.3,tau*(1.6+1.0*(1-air)),age);
-            s.Condensation=Condensation(plan,layout,age,tau,air,look);
+            s.ShellOpacity=Numbers.Clamp(shellBase*look.ShockwaveStrength*(look.Modern?0.07:1)*Smooth(0,0.03,real)*Math.Exp(-real/shellLife),0,1);
+            s.ShellErosion=0.85*Smooth(tau*0.3,tau*(1.6+1.0*(1-air)),real);
+            s.Condensation=Condensation(plan,layout,real,tau,air,look);
             if(s.Condensation>0)
             {
                 // The air behind the shock front cools as it expands and its moisture flashes into a white shell for a moment.
@@ -230,26 +233,26 @@ namespace VolumetricExplosionFX.Core
             // the stem from the ground up with the frame, then with this).
             s.SimStem=s.Sim&&(plan.Warhead==WarheadKind.None||FireSim.IsNukeRun(s.SimRun))?1+Smooth(0,3,s.Lobe0.SimAfter):0;
             s.SmokeMix=s.Sim&&layout!=null?layout.SmokeMix:new Vec4();
-            s.ShockRadius=DomeRadius(plan)*(0.12+2.6*(1-Math.Exp(-age/(0.4*tau))))/box;
-            s.ShockStrength=Numbers.Clamp(air*strength*look.ShockwaveStrength*Smooth(0,0.02,age)*Math.Exp(-age/(1.2*tau)),0,1.5);
+            s.ShockRadius=DomeRadius(plan)*(0.12+2.6*(1-Math.Exp(-real/(0.4*tau))))/box;
+            s.ShockStrength=Numbers.Clamp(air*strength*look.ShockwaveStrength*Smooth(0,0.02,real)*Math.Exp(-real/(1.2*tau)),0,1.5);
             s.RingRadius=s.ShockRadius; s.RingStrength=s.ShockStrength; s.RingScale=domeLocal;
             if(look.Modern)
             {
                 // 1.1: once the fireball stops pushing, the blast wave keeps running at about the speed of sound, fading as it spreads.
                 // It stays a near-field effect: gone by sixteen dome radii (350-1200 m), not kilometres.
                 double sound=340*Math.Sqrt(air), reachMetres=plan.Warhead==WarheadKind.Nuke?NukeBlastReach(plan):Numbers.Clamp(16*DomeRadius(plan),350,1200);
-                s.ShockRadius+=sound*Math.Max(0,age-0.3*tau)*Smooth(0.3*tau,1.5*tau,age)/box;
+                s.ShockRadius+=sound*Math.Max(0,real-0.3*tau)*Smooth(0.3*tau,1.5*tau,real)/box;
                 // A nuclear front runs at the speed of sound from the burst, leaving the fireball at once: the visible
                 // front, the camera's jolt (Shake.Arrival) and BDArmory's boom (delayed by distance / speed of sound) arrive
                 // together (it ran ahead of them by a couple of seconds).
                 if(plan.Warhead==WarheadKind.Nuke)
-                    s.ShockRadius=Math.Max(1.15*FireballRadius(plan)*(1-Math.Exp(-age/0.05)),sound*age)/box;
+                    s.ShockRadius=Math.Max(1.15*FireballRadius(plan)*(1-Math.Exp(-real/0.05)),sound*real)/box;
                 s.RingReach=reachMetres;
                 double metres=s.ShockRadius*box;
                 // A nuclear blast wave stays strong while it crosses kilometres (it is what one sees race over the ground).
                 double keepShock=plan.Warhead==WarheadKind.Nuke?Math.Max(2.4*tau,0.45*reachMetres/Math.Max(sound,50)):4.5*tau;
                 double violent=plan.Warhead==WarheadKind.Nuke?1+0.8*NukeCloud.Megaton(plan.WarheadTnt/1e6):1;   // (a megaton front bends the land harder)
-                s.ShockStrength=Numbers.Clamp(air*strength*look.ShockwaveStrength*violent*Smooth(0,0.02,age)*Math.Exp(-age/keepShock)*
+                s.ShockStrength=Numbers.Clamp(air*strength*look.ShockwaveStrength*violent*Smooth(0,0.02,real)*Math.Exp(-real/keepShock)*
                     (1-Smooth(0.4*reachMetres,reachMetres,metres)),0,1.5*violent);
                 // A nuclear blast front in the test films: a sharp, shimmering shell sweeping out over the land for kilometres
                 // and bending everything behind it as it passes, weakening with distance. It faded in time (gone ~2 s after the
@@ -257,7 +260,7 @@ namespace VolumetricExplosionFX.Core
                 if(plan.Warhead==WarheadKind.Nuke)
                 {
                     double vis=2*reachMetres;
-                    s.ShockStrength=Numbers.Clamp(air*strength*look.ShockwaveStrength*Smooth(0,0.02,age)*
+                    s.ShockStrength=Numbers.Clamp(air*strength*look.ShockwaveStrength*Smooth(0,0.02,real)*
                         (0.4+0.6*Math.Exp(-metres/(0.6*reachMetres)))*(1-Smooth(0.55*vis,vis,metres)),0,1.5);
                 }
             }
@@ -265,7 +268,7 @@ namespace VolumetricExplosionFX.Core
             if(s.Sim&&layout!=null&&plan.Warhead==WarheadKind.Nuke&&R>0) NukeLook(ref s,plan,layout,age,tf,box);
             s.Haze=Numbers.Clamp(air*Math.Max(fire,kinetic*0.5)*Smooth(0.03,0.25,age)*Math.Exp(-age/(1.5+4*tau)),0,1);
             s.HazeHeight=Math.Max((0.6+0.9*Smooth(0,2,age))*k,s.FireRise+s.FireRadius*1.6);
-            double duration=VolumeDuration(plan);
+            double duration=ScaledDuration(plan);
             if(look.Modern)
             {
                 // The smoke breaks up from its edges instead of fading as a smooth ball.
@@ -274,7 +277,32 @@ namespace VolumetricExplosionFX.Core
                 s.ProxyGain=box/Math.Max(classicBox,1e-6);
             }
             else s.Fade=Numbers.Clamp((duration-age)/(0.3*duration),0,1);
+            ApplyReconfig(ref s,plan,real);
             return s;
+        }
+        /// <summary>VFX Reconfigured: no glow after the glow time (real seconds); then the smoke's opacity halves every half-life.</summary>
+        static void ApplyReconfig(ref VolumeState s,FxPlan plan,double real)
+        {
+            double glow=Reconfig.GlowLeft(plan,real);
+            s.Heat*=glow; s.Glow*=glow; s.FireHeat*=glow; s.Pulse*=glow;
+            for(int i=0;i<BlastLayout.Count;i++) { LobeState l=s.Lobe(i); l.Heat*=glow; s.SetLobe(i,l); }
+            s.Fade*=Reconfig.SmokeLeft(plan,real);
+            s.FireBody=Numbers.Clamp(s.FireBody*Reconfig.SmokeOpacity,0,1);
+        }
+        /// <summary>VFX Reconfigured: the cloud's lifetime on the fireball's own (faster) clock, capped by the smoke limit.</summary>
+        public static double ScaledDuration(FxPlan plan)
+        {
+            double speed=Reconfig.Speed(plan);
+            return Math.Min(VolumeDuration(plan),RealDuration(plan)*speed);
+        }
+        /// <summary>VFX Reconfigured: how long the cloud lasts in real seconds: the faster clock, the smoke limit, and the
+        /// point where the halving smoke is practically gone (ten half-lives after the glow).</summary>
+        public static double RealDuration(FxPlan plan)
+        {
+            double speed=Reconfig.Speed(plan);
+            double life=VolumeDuration(plan)/speed;
+            if(plan.Warhead!=WarheadKind.Nuke) life=Math.Min(life,Math.Min(Reconfig.MaxSeconds(plan),Reconfig.GlowSeconds(plan)+10*Reconfig.SmokeHalfLife(plan)));
+            return Math.Max(life,0.5);
         }
         static void EvaluateFireball(ref VolumeState s,FxPlan plan,BlastLayout layout,double age,double R,double tf,double air,double fire,bool surface,double box)
         {

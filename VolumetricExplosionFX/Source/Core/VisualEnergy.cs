@@ -66,6 +66,12 @@ namespace VolumetricExplosionFX.Core
             }
             // Visual sizing only, not a combustion or damage model.
             double burnable=selfContained+Math.Min(fuel,oxidizer)+fuel*atmosphere*0.2;
+            // VFX Reconfigured: what explodes. Wings, control surfaces, structure, fairings and command/probe parts break
+            // into debris without a fireball (even a wing holding fuel); a battery burns by its charge; a tank by how much
+            // propellant is left in it (an empty one doesn't explode at all, as the sum above already gives).
+            PartKind partKind=classifier.Classify(p);
+            if(partKind==PartKind.Wing||partKind==PartKind.Structure||partKind==PartKind.Fairing||partKind==PartKind.Capsule||partKind==PartKind.Avionics) burnable=0;
+            else if(partKind==PartKind.Battery) burnable=Math.Min(electric,50000)*0.004;   // 1000 EC: a small flash; 4000 EC: a fire
             if(e.Kind==EventKind.WaterImpact) burnable*=0.35;
             double speed=Numbers.Clamp(p.SurfaceVelocity.Length,0,15000);
             double kinetic=e.Kind==EventKind.Destruction?0:0.5*Math.Min(p.MassKg,1e7)*speed*speed;
@@ -80,7 +86,7 @@ namespace VolumetricExplosionFX.Core
             sr+=(0.6-sr)*brown; sg+=(0.36-sg)*brown; sb+=(0.18-sb)*brown;
             Vec3 dust=BodyLook.Dust(p.Environment!=null?p.Environment.Body:null);
             return new FxPlan { DustR=dust.X, DustG=dust.Y, DustB=dust.Z,
-                PartKind=classifier.Classify(p), Contents=contents, Kind=e.Kind, Atmosphere=atmosphere, ImpactSpeed=speed,
+                PartKind=partKind, Contents=contents, Kind=e.Kind, Atmosphere=atmosphere, ImpactSpeed=speed,
                 KineticJoules=kinetic, VisualEnergyScore=score,
                 Hydrogen=Numbers.Clamp(hydrogenMass/fuelTotal,0,1), Mono=Numbers.Clamp(monoMass/fuelTotal,0,1), Brown=Numbers.Clamp(brown,0,1), OreKg=oreMass,
                 Fill=room>0?Numbers.Clamp(held/room,0,1):0,

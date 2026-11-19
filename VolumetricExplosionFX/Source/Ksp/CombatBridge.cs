@@ -264,6 +264,54 @@ namespace VolumetricExplosionFX.Ksp
             catch(Exception ex) { Diagnose(part,"read failed: "+ex.GetType().Name+" "+ex.Message); }
             return false;
         }
+        /// <summary>
+        /// VFX Reconfigured: whether the combat mod sets this part's warhead off as the part is destroyed. true: it detonates
+        /// (or already has); false: it doesn't (an unarmed bomb, a missile still in its launch safety window, a nuke that
+        /// was never armed); null: can't tell (keep VEFX's original behaviour).
+        /// </summary>
+        internal bool? WillDetonate(Part part)
+        {
+            if(!Available||part==null||part.Modules==null) return null;
+            const BindingFlags any=BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic;
+            try
+            {
+                PartModule launcher=null;
+                for(int i=0;i<part.Modules.Count;i++) { PartModule m=part.Modules[i]; if(m!=null&&m.GetType().Name=="MissileLauncher") { launcher=m; break; } }
+                for(int i=0;i<part.Modules.Count;i++)
+                {
+                    PartModule m=part.Modules[i]; if(m==null) continue;
+                    Type t=m.GetType();
+                    bool nuke=nukeModuleType!=null&&nukeModuleType.IsAssignableFrom(t);
+                    bool charge=explosiveType!=null&&explosiveType.IsAssignableFrom(t);
+                    if(!nuke&&!charge) continue;
+                    bool? detonated=ReadBool(t.GetField("hasDetonated",any),m);
+                    if(detonated==true) { bool? failed=ReadBool(t.GetField("fuseFailed",any),m); return failed!=true; }
+                    if(charge)
+                    {
+                        bool? armed=ReadBool(t.GetField("Armed",any),m);
+                        if(armed.HasValue) return armed.Value;
+                    }
+                    else
+                    {
+                        if(ReadBool(t.GetField("contactArmed",any),m)==true) return true;
+                        if(launcher!=null)
+                        {
+                            PropertyInfo isArmed=launcher.GetType().GetProperty("IsArmed",any);
+                            if(isArmed!=null) return (bool)isArmed.GetValue(launcher,null);
+                            FieldInfo fired=launcher.GetType().GetField("HasFired",any);
+                            PropertyInfo firedP=fired==null?launcher.GetType().GetProperty("HasFired",any):null;
+                            if(fired!=null) return (bool)fired.GetValue(launcher);
+                            if(firedP!=null) return (bool)firedP.GetValue(launcher,null);
+                        }
+                        return detonated.HasValue?(bool?)false:null;
+                    }
+                    return null;
+                }
+            }
+            catch(Exception ex) { Diagnose(part,"arming read failed: "+ex.GetType().Name+" "+ex.Message); }
+            return null;
+        }
+        static bool? ReadBool(FieldInfo f,object o) { if(f==null||f.FieldType!=typeof(bool)) return null; return (bool)f.GetValue(o); }
         // Nuclear bombs of weapon packs known by part name, for when their nuke module is not on the part: NKDR's Tsar
         // Bomba lost it to a missing brace in its config and fell as a plain part. Yield (kt) and thermal reach (m).
         static readonly Dictionary<string,double[]> KnownNukes=new Dictionary<string,double[]>(StringComparer.OrdinalIgnoreCase)

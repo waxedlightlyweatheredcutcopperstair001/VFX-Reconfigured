@@ -180,6 +180,15 @@ namespace VolumetricExplosionFX.Ksp
                 // charge: it gets the warhead's explosion, spawned at once, whether or not the combat mod detonates it.
                 WarheadInfo warhead=default(WarheadInfo); string weapon;
                 bool armed=combat!=null&&combat.WarheadOf(part,out warhead,out weapon)&&!Warhead.Small(warhead);
+                // VFX Reconfigured: only a warhead that is actually set off gets its full explosion. An unarmed bomb that is
+                // destroyed burns or breaks its charge open (a small cook-off); a nuclear weapon that isn't armed doesn't go off
+                // at all (it only breaks apart).
+                if(armed&&combat.WillDetonate(part)==false)
+                {
+                    if(warhead.Kind==WarheadKind.Nuke) armed=false;
+                    else { warhead.TntKg*=0.03; warhead.RangeM*=0.3; armed=!Warhead.Small(warhead); }
+                    duds++;
+                }
                 if(armed) { Warhead.Apply(plan,warhead); warheadParts++; }
                 bool nuclear=armed&&warhead.Kind==WarheadKind.Nuke;
                 if(nuclear&&(pool.NuclearNear(where,(float)Warhead.SameNuke(VolumeEvolution.FireballRadius(plan)),10)||PendingNuke(where,Warhead.SameNuke(VolumeEvolution.FireballRadius(plan)))))
@@ -396,7 +405,7 @@ namespace VolumetricExplosionFX.Ksp
         // explosion visuals are given back the same frame: every detonation shows, one way or the other.
         CombatBridge combat;
         uint warheadCount;
-        int combatDrawn, combatGivenBack, combatHits, warheadParts;
+        int combatDrawn, combatGivenBack, combatHits, warheadParts, duds;
         void Detonate(CombatBridge.Detonation d)
         {
             string outcome=null; bool drawn=false;
@@ -822,7 +831,7 @@ namespace VolumetricExplosionFX.Ksp
             string summary=null;
             if(pool!=null) { try { summary=Summary(false); probe.Flush(settings.Quality.ToString()); } catch(Exception ex) { Fail(ex); } }
             if(stock!=null) { try { stock.Dispose(); } catch(Exception ex) { Fail(ex); } stock=null; }
-            if(combat!=null) { try { if(combat.Available) Debug.Log("[VEFX] Combat explosions: "+combat.Detected+" detonations and "+combat.BulletHits+" bullet hits seen, "+combatDrawn+" drawn by VEFX ("+combatHits+" as light bursts), "+combatGivenBack+" left to BDArmory's visuals; "+warheadParts+" bombs/missiles destroyed as parts drawn as warheads; BDArmory generic effects: "+combat.Emitters);
+            if(combat!=null) { try { if(combat.Available) Debug.Log("[VEFX] Combat explosions: "+combat.Detected+" detonations and "+combat.BulletHits+" bullet hits seen, "+combatDrawn+" drawn by VEFX ("+combatHits+" as light bursts), "+combatGivenBack+" left to BDArmory's visuals; "+warheadParts+" bombs/missiles destroyed as parts drawn as warheads ("+duds+" not set off: drawn small or as debris); BDArmory generic effects: "+combat.Emitters);
                 if(collapses>0) Debug.Log("[VEFX] Building collapses drawn: "+collapses+", stock demolition effects hidden: "+collapseHidden.Count+" ("+string.Join(", ",new List<string>(collapseNames).ToArray())+"), hiding cost "+collapseFxMs.ToString("0")+" ms in all (worst frame "+collapseFxWorstMs.ToString("0.0")+" ms); other particle effects near them: "+(otherNames.Count>0?string.Join(", ",new List<string>(otherNames).ToArray()):"none")); combat.Dispose(); } catch(Exception ex) { Fail(ex); } combat=null; }
             if(pool!=null)
             {

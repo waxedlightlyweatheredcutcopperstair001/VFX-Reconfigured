@@ -225,6 +225,21 @@ namespace VolumetricExplosionFX.Rendering
                         new Color(0.68f,0.66f,0.62f,0.32f));
                 }
             }
+            // VFX Reconfigured: a part that breaks up without burning (wing, structure, empty tank) throws out a cloud of dust
+            // and fine smoke that hangs for a few seconds and settles.
+            if(!burning&&!reentry&&c.Air>0.05f&&plan.Warhead==WarheadKind.None)
+            {
+                float r=Mathf.Max(radius,0.8f);
+                int n=8+(int)Mathf.Min(10,(float)plan.VisualEnergyScore*2);
+                float alpha=0.24f*Mathf.Clamp((float)Reconfig.SmokeOpacity,0.1f,2);
+                for(int i=0;i<n;i++)
+                {
+                    Vector3 d=random.Direction(); float puff=r*(0.9f+0.9f*random.Next());
+                    Color tone=Color.Lerp(Dust(0.95f,alpha),new Color(0.6f,0.59f,0.57f,alpha),0.5f);
+                    Emit(smoke,Lift(d*r*0.5f,puff),d*(0.6f+1.2f*random.Next())+wind*0.5f+Vector3.up*0.15f,puff,4+6*random.Next(),tone);
+                }
+                Horizon=Mathf.Max(Horizon,12);
+            }
             if(settings.Burst&&plan.ElectricFraction>0.01)
                 for(int i=0;i<6;i++) Emit(fire,Vector3.zero,random.Direction()*5,0.035f,0.12f+random.Next()*0.15f,
                     new Color(0.65f,0.8f,1,(float)plan.ElectricFraction));
@@ -890,6 +905,20 @@ namespace VolumetricExplosionFX.Rendering
             }
         }
         internal void Simulate(float dt) { foreach(ParticleSystem p in Roots()) if(p!=null) p.Simulate(dt,true,false,false); }
+        /// <summary>
+        /// VFX Reconfigured: the fireball's flames and smoke play faster by the explosion speed setting; sparks, fragments,
+        /// the shock ring, flying debris showers and ground effects keep their pace. 'photo' is VEFX's photo-mode clock.
+        /// </summary>
+        internal void SetClock(float photo)
+        {
+            float fast=photo*(float)Reconfig.Speed(c.Plan);
+            foreach(ParticleSystem p in Roots())
+            {
+                if(p==null) continue;
+                bool flameOrSmoke=p==fire||p==smoke||p==embers||p==burst||p==cloud||p==plasma?.System||p==plasmaSmoke?.System;
+                ParticleSystem.MainModule main=p.main; main.simulationSpeed=flameOrSmoke?fast:photo;
+            }
+        }
         internal void Clear()
         {
             foreach(ParticleSystem p in Roots()) if(p!=null) p.Stop(true,ParticleSystemStopBehavior.StopEmittingAndClear);
