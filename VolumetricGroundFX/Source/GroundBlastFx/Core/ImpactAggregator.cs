@@ -104,6 +104,7 @@ namespace GroundBlastFx.Core
                 d.IsDemo |= j.IsDemo;
                 d.EngineCount++;
                 d.ThrustN += w;
+                if (j.AirBreathing) d.AirBreathingThrustN += w;
                 d.MassFlowKgS += _eval[k].MassFlowKgS;
                 d.ImpactWorld += h.PointWorld * w;
                 d.NormalWorld += h.NormalWorld * w;

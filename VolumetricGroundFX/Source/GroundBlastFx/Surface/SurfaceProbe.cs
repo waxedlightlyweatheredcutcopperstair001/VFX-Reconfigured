@@ -222,6 +222,8 @@ namespace GroundBlastFx.Surface
                     }
                     else
                     {
+                        // VFX Reconfigured: jet engines never get launch-pad plumes, even over a pad.
+                        if (j.AirBreathing && h.Surface == SurfaceKind.LaunchPad) { h.Surface = SurfaceKind.Terrain; h.SiteKey = null; }
                         if (j.PadLatched && (h.Surface == SurfaceKind.Terrain || h.Surface == SurfaceKind.Structure || h.Surface == SurfaceKind.LaunchPad || h.Surface == SurfaceKind.Unknown))
                         {
                             h.Surface = SurfaceKind.LaunchPad;

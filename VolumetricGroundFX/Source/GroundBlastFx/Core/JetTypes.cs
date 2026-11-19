@@ -26,6 +26,7 @@ namespace GroundBlastFx.Core
         public float ForcedGravityMs2;       // 0 = gravité réelle
         public bool PadLatched;              // vaisseau dans la fenêtre « pas de tir » (PRELAUNCH + altitude)
         public string SiteKey;               // nom du site de lancement associé (latch), sinon null
+        public bool AirBreathing;            // VFX Reconfigured: jet engine (turbine / intake air): faint dust only, never launch-pad plumes
     }
 
     /// <summary>Résultat du sondage de surface pour un jet.</summary>
@@ -78,6 +79,7 @@ namespace GroundBlastFx.Core
         public bool ForceVacuum;
         public float ForcedGravityMs2;
         public string SiteKey;
+        public float AirBreathingThrustN;    // VFX Reconfigured: thrust from air-breathing engines in this group
         public float WeightSum;              // somme des poussées (interne)
         public float SurfaceWeightBest;      // interne : poussée qui a déterminé Surface
     }

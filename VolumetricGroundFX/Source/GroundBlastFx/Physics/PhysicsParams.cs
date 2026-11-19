@@ -26,6 +26,10 @@ namespace GroundBlastFx.Model
         public float ActivationKVacuum = 9f;            // idem dans le vide (jet non confiné, régolithe sans cohésion)
         public float ActivationFullFraction = 0.6f;     // effet plein sous 0,6 · H_act
 
+        // --- VFX Reconfigured: jet engines (air-breathing) ---
+        public float JetDustScale = 0.35f;              // dust/steam visibility multiplier for jet-driven clusters (fainter, more transparent)
+        public float JetCloudRadiusScale = 0.5f;        // cloud radius multiplier for jet-driven clusters
+
         // --- Levée de poussière ---
         public float LiftReferenceVelocityMs = 100f;    // u_ref
         public float SteamVisibilityThresholdMs = 15f;  // vitesse pariétale minimale pour une vapeur visible

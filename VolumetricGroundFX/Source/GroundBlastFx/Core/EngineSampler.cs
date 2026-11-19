@@ -39,6 +39,7 @@ namespace GroundBlastFx.Core
             public Part Part;
             public float ExitRadiusM;
             public PropellantLight Light;
+            public bool AirBreathing;
         }
 
         private sealed class VesselEntry
@@ -140,8 +141,9 @@ namespace GroundBlastFx.Core
                             Vessel = v,
                             Part = e.Part,
                             Key = 0,
-                            PadLatched = entry.Latched,
-                            SiteKey = entry.SiteKey,
+                            PadLatched = entry.Latched && !e.AirBreathing,
+                            SiteKey = e.AirBreathing ? null : entry.SiteKey,
+                            AirBreathing = e.AirBreathing,
                         };
                         jets.Add(ref s);
                     }
@@ -186,6 +188,7 @@ namespace GroundBlastFx.Core
                         Part = part,
                         ExitRadiusM = ExitRadius(part, me, p),
                         Light = ResolvePropellant(me),
+                        AirBreathing = IsAirBreathing(me),
                     });
                 }
             }
@@ -236,6 +239,17 @@ namespace GroundBlastFx.Core
             return NozzleGeometry.EstimateDiameter(part.FindModelComponents<Renderer>(), axis);
         }
 
+        /// <summary>VFX Reconfigured: jet engines (turbines, or anything burning intake air) make faint dust, never launch-pad plumes.</summary>
+        private static bool IsAirBreathing(ModuleEngines m)
+        {
+            if (m.engineType == EngineType.Turbine) return true;
+            List<Propellant> props = m.propellants;
+            if (props != null)
+                for (int k = 0; k < props.Count; k++)
+                    if (props[k].name != null && props[k].name.IndexOf("Intake", StringComparison.OrdinalIgnoreCase) >= 0) return true;
+            return false;
+        }
+
         /// <summary>Premier motif de Propellants.cfg (dans l'ordre du fichier) qui correspond à un ergol du moteur.</summary>
         private static PropellantLight ResolvePropellant(ModuleEngines m)
         {
@@ -258,7 +272,7 @@ namespace GroundBlastFx.Core
 
         private void UpdateLatch(Vessel v, VesselEntry e, PhysicsParams p)
         {
-            if (v.situation == Vessel.Situations.PRELAUNCH)
+            if (v.situation == Vessel.Situations.PRELAUNCH && (IsPadSite(v.landedAt) || string.IsNullOrEmpty(v.landedAt)))
             {
                 if (!e.Latched) GeLog.Info("Pas de tir : « " + v.vesselName + " » verrouillé sur " + (string.IsNullOrEmpty(v.landedAt) ? "(site inconnu)" : v.landedAt));
                 e.Latched = true;

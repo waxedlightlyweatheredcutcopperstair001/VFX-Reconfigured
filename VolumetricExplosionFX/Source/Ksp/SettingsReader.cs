@@ -106,7 +106,7 @@ namespace VolumetricExplosionFX.Ksp
         static FxSettings current;
         internal static int Version { get; private set; }
         internal static FxSettings Settings { get { if(current==null) current=SettingsReader.Read(); return current; } }
-        static string Folder { get { return Path.Combine(KSPUtil.ApplicationRootPath,"GameData/VolumetricExplosionFX/PluginData"); } }
+        static string Folder { get { return VFXReconfigured.ModPaths.ExplosionsData; } }
         static string UserFile { get { return Path.Combine(Folder,"settings.cfg"); } }
         internal static ConfigNode LoadUser()
         {

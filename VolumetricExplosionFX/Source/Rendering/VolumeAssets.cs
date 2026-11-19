@@ -39,7 +39,7 @@ namespace VolumetricExplosionFX.Rendering
                 if(File.Exists(beside)) return beside;
             }
             catch(Exception) { }
-            string usual=Path.Combine(KSPUtil.ApplicationRootPath,"GameData/VolumetricExplosionFX/Assets/"+file);
+            string usual=Path.Combine(VFXReconfigured.ModPaths.Assets,file);
             return File.Exists(usual)?usual:null;
         }
         // saveMemory (video memory saver): only the first ground and air runs and two nuclear ones (about 110 MB of video

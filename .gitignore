@@ -13,3 +13,5 @@
 **/UserSettings/
 # Python caches
 __pycache__/
+# Local machine paths
+/config.local.json

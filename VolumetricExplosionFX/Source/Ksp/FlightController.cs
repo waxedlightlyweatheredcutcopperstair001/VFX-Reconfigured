@@ -59,7 +59,7 @@ namespace VolumetricExplosionFX.Ksp
                 combat=new CombatBridge(); combat.Hide=ReplaceStock;
                 if(settings.Debug)
                 {
-                    string path=Path.Combine(KSPUtil.ApplicationRootPath,"GameData/VolumetricExplosionFX/PluginData");
+                    string path=VFXReconfigured.ModPaths.ExplosionsData;
                     Directory.CreateDirectory(path);
                     log=new StreamWriter(Path.Combine(path,"visual-events.log"),false); log.AutoFlush=true;
                 }

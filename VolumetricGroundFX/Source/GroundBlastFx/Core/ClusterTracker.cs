@@ -301,6 +301,7 @@ namespace GroundBlastFx.Core
             // R_max ne décroît pas pendant la vie du foyer (une baisse de poussée ne rétrécit pas le nuage déjà formé)
             // et couvre au moins la tache d'impact. Dans le vide, il suit la portée visible de la nappe d'éjectas.
             float rmax = Mathf.Max(PlumeModel.MaxCloudRadius(g.ThrustN, p), 1.5f * g.EnvelopeRadiusM);
+            if (g.ThrustN > 0f && g.AirBreathingThrustN > 0f) rmax *= Mathf.Lerp(1f, p.JetCloudRadiusScale, Mathf.Clamp01(g.AirBreathingThrustN / g.ThrustN));
             if (s.Medium == MediumKind.Vacuum)
             {
                 float range = VacuumEjectaModel.BallisticRange(VacuumEjectaModel.CharacteristicSpeed(g.WallJetVelocityMs, p),
@@ -310,6 +311,14 @@ namespace GroundBlastFx.Core
             s.MaxCloudRadiusM = Mathf.Max(s.MaxCloudRadiusM, rmax);
             s.Lift = PlumeModel.DustLift(g.WallJetVelocityMs, threshold, s.Erodibility, p);
             s.SteamVisibility = PlumeModel.SteamVisibility(g.WallJetVelocityMs, s.SteamFraction, p);
+            // VFX Reconfigured: jets stir up faint, transparent dust rather than rocket plumes.
+            float jetShare = g.ThrustN > 0f ? Mathf.Clamp01(g.AirBreathingThrustN / g.ThrustN) : 0f;
+            if (jetShare > 0f)
+            {
+                float k = Mathf.Lerp(1f, p.JetDustScale, jetShare);
+                s.Lift *= k;
+                s.SteamVisibility *= k;
+            }
             s.EjectaSpeedMs = VacuumEjectaModel.CharacteristicSpeed(g.WallJetVelocityMs, p);
             s.EjectaAngleDeg = VacuumEjectaModel.SheetAngleDeg(g.StandoffM, g.ExitRadiusM, p);
             s.FlameColor = g.FlameColor;

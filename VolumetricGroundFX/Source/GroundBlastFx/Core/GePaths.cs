@@ -9,28 +9,10 @@ namespace GroundBlastFx.Core
         private static string _modRoot;
 
         /// <summary>GameData/Volumetric Ground FX (chemin absolu).</summary>
-        public static string ModRoot
-        {
-            get
-            {
-                if (_modRoot != null) return _modRoot;
-                try
-                {
-                    string dll = typeof(GePaths).Assembly.Location;
-                    string plugins = Path.GetDirectoryName(dll);
-                    _modRoot = Path.GetDirectoryName(plugins);
-                }
-                catch (Exception)
-                {
-                    _modRoot = null;
-                }
-                if (string.IsNullOrEmpty(_modRoot) || !Directory.Exists(_modRoot))
-                    _modRoot = Path.Combine(Path.Combine(KSPUtil.ApplicationRootPath, "GameData"), "Volumetric Ground FX");
-                return _modRoot;
-            }
-        }
+        // VFX Reconfigured: the merged mod's folder (GameData/VolumetricFXReconfigured); ground settings in PluginData/Ground.
+        public static string ModRoot => _modRoot ?? (_modRoot = VFXReconfigured.ModPaths.ModRoot);
 
-        public static string PluginData => Path.Combine(ModRoot, "PluginData");
+        public static string PluginData => VFXReconfigured.ModPaths.GroundData;
 
         public static string LogFile => Path.Combine(PluginData, "GroundBlastFx.log");
 
