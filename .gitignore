@@ -1,11 +1,11 @@
 # Build output
-build/
+/build/
 **/obj/
 **/bin/
 # The packaged mod is generated; it's published as a GitHub Release zip instead of tracked here.
-GameData/
+/GameData/
 # Release zips
-release/
+/release/
 # Unity project caches (if a Unity project is opened from this repo)
 **/Library/
 **/Temp/
