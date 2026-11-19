@@ -18,6 +18,9 @@ Layout of the package:
 import argparse, json, re, shutil, sys, zipfile
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import localconfig
+
 ROOT = Path(__file__).resolve().parents[1]
 NAME = 'VolumetricFXReconfigured'
 VEFX = ROOT / 'VolumetricExplosionFX'
@@ -94,8 +97,7 @@ def make_zip(out, ver):
 
 
 def deploy(out):
-    cfg_path = ROOT / 'config.local.json'
-    cfg = json.loads(cfg_path.read_text()) if cfg_path.exists() else {}
+    cfg = localconfig.load(required=False)
     ksp = cfg.get('kspRoot')
     if not ksp or not (Path(ksp) / 'GameData').is_dir():
         sys.exit('Set "kspRoot" in config.local.json to your KSP folder (the one containing GameData) to deploy.')

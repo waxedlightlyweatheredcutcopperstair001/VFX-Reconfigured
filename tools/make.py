@@ -16,15 +16,15 @@ Needs: Python 3 with numpy, the .NET SDK (8 or newer), Unity 2019.4.18f1 with Wi
 import argparse, json, os, shutil, subprocess, sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import localconfig
+
 ROOT = Path(__file__).resolve().parents[1]
 VEFX = ROOT / 'VolumetricExplosionFX'
 
 
 def config():
-    p = ROOT / 'config.local.json'
-    if not p.exists():
-        sys.exit('Create config.local.json (see the top of tools/make.py).')
-    return json.loads(p.read_text())
+    return localconfig.load()
 
 
 def run(args, cwd=ROOT, env=None):

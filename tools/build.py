@@ -7,6 +7,9 @@ Output: build/VolumetricFXReconfigured.dll
 import json, os, subprocess, sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import localconfig
+
 ROOT = Path(__file__).resolve().parents[1]
 NAME = 'VolumetricFXReconfigured'
 SOURCE_TREES = [ROOT / 'src', ROOT / 'VolumetricExplosionFX' / 'Source', ROOT / 'VolumetricGroundFX' / 'Source' / 'GroundBlastFx']
@@ -18,8 +21,7 @@ EXCLUDE = {
 
 
 def ksp_managed():
-    cfg_path = ROOT / 'config.local.json'
-    cfg = json.loads(cfg_path.read_text()) if cfg_path.exists() else {}
+    cfg = localconfig.load(required=False)
     ksp = os.environ.get('KSP_ROOT') or cfg.get('kspRoot')
     if not ksp:
         sys.exit('Set KSP_ROOT or "kspRoot" in config.local.json (a KSP 1.12.5 folder containing KSP_x64_Data/Managed).')
