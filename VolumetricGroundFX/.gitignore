@@ -1,0 +1,25 @@
+bin/
+obj/
+.vs/
+*.user
+*.suo
+Release/
+GameData/Volumetric Ground FX/Plugins/*.dll
+GameData/Volumetric Ground FX/Plugins/*.pdb
+GameData/Volumetric Ground FX/PluginData/Settings.cfg
+GameData/Volumetric Ground FX/PluginData/LaunchSites_user.cfg
+GameData/Volumetric Ground FX/PluginData/GroundBlastFx.log
+GameData/Volumetric Ground FX/PluginData/DevAutomation.cfg
+GameData/Volumetric Ground FX/PluginData/Captures/
+UnityProject/Library/
+UnityProject/Temp/
+UnityProject/Logs/
+UnityProject/obj/
+UnityProject/UserSettings/
+UnityProject/Build/
+UnityProject/Assets/Editor/Shared/
+UnityProject/Assets/Editor/Shared.meta
+UnityProject/Assets/GroundBlastFx/Noise128.asset
+UnityProject/Assets/GroundBlastFx/Noise128.asset.meta
+Tools/render-tests/out/
+Tools/render-tests/out-monitor/
