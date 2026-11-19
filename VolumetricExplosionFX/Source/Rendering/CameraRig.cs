@@ -1,0 +1,92 @@
+using System;
+using System.Text;
+using UnityEngine;
+using VolumetricExplosionFX.Core;
+namespace VolumetricExplosionFX.Rendering
+{
+    internal static class CameraRig
+    {
+        internal static Camera Near, Far;
+        static bool addedNear, addedFar;
+        static float lastNear, lastFar;
+        internal static void Setup()
+        {
+            Refresh();
+            int near=Near!=null?Near.cullingMask:~0, far=Far!=null?Far.cullingMask:~0, both=near&far;
+            EffectLayer.Value=(both&(1<<1))!=0?1:(both&1)!=0?0:1;
+            var text=new StringBuilder("[VEFX] Flight cameras:");
+            FlightCamera fc=FlightCamera.fetch;
+            if(fc!=null&&fc.cameras!=null)
+                foreach(Camera c in fc.cameras)
+                    if(c!=null) text.Append(" | "+c.name+" near "+c.nearClipPlane.ToString("F2")+" far "+c.farClipPlane.ToString("F0")+
+                        " mask 0x"+c.cullingMask.ToString("X8")+" depth "+c.depthTextureMode+(c==Near?" (near)":c==Far?" (far)":""));
+            text.Append(" | effect layer "+EffectLayer.Value);
+            Debug.Log(text.ToString());
+        }
+        // Compatibility report: what every camera draws through command buffers (other mods' passes: Scatterer's atmosphere
+        // and ocean, EVE's clouds, Deferred's lighting), in the order of the camera's events, so a clash with VEFX's volume
+        // pass (AfterForwardAlpha) can be read from the log.
+        internal static string RenderStack()
+        {
+            var text=new StringBuilder("[VEFX] Render stack:");
+            foreach(Camera c in Camera.allCameras)
+            {
+                if(c==null) continue;
+                var line=new StringBuilder();
+                foreach(UnityEngine.Rendering.CameraEvent e in Enum.GetValues(typeof(UnityEngine.Rendering.CameraEvent)))
+                {
+                    var buffers=c.GetCommandBuffers(e);
+                    if(buffers==null||buffers.Length==0) continue;
+                    line.Append(" "+e+"[");
+                    for(int i=0;i<buffers.Length;i++) line.Append((i>0?", ":"")+(string.IsNullOrEmpty(buffers[i].name)?"unnamed":buffers[i].name));
+                    line.Append("]");
+                }
+                text.Append(" | "+c.name+" ("+c.actualRenderingPath+", depth "+c.depth.ToString("0.#")+")"+(line.Length>0?":"+line:""));
+            }
+            return text.ToString();
+        }
+        internal static void Refresh()
+        {
+            FlightCamera fc=FlightCamera.fetch;
+            Near=fc!=null?fc.mainCamera:Camera.main; Far=null;
+            if(fc==null||fc.cameras==null) return;
+            foreach(Camera c in fc.cameras)
+                if(c!=null&&c!=Near&&(Far==null||c.farClipPlane>Far.farClipPlane)) Far=c;
+            if(Far!=null&&Near!=null&&Far.farClipPlane<=Near.farClipPlane) Far=null;
+        }
+        internal static Camera Pick(Vector3 center,float reach)
+        {
+            if(Near==null||Far==null) return null;
+            float d=Vector3.Dot(center-Near.transform.position,Near.transform.forward);
+            double split=System.Math.Min(Near.farClipPlane,Far.nearClipPlane);
+            VolumeCameraSelection selection=VolumeCameraRange.Select(d,reach,split);
+            return selection==VolumeCameraSelection.Near?Near:selection==VolumeCameraSelection.Far?Far:null;
+        }
+        internal static void SetRenderRange(Camera c)
+        {
+            float end=c==Near&&Far!=null?Mathf.Min(c.farClipPlane,Far.nearClipPlane):c!=null?c.farClipPlane:0;
+            Shader.SetGlobalVector("_VefxClipRange",IsFlight(c)?new Vector4(c.nearClipPlane,end,0,0):Vector4.zero);
+        }
+        internal static bool IsFlight(Camera c) { return c!=null&&(c==Near||c==Far); }
+        internal static void RequestDepth(bool near,bool far)
+        {
+            float now=Time.unscaledTime;
+            if(near) lastNear=now; if(far) lastFar=now;
+            Want(Near,near||now-lastNear<3,ref addedNear);
+            Want(Far,far||now-lastFar<3,ref addedFar);
+        }
+        static void Want(Camera c,bool want,ref bool added)
+        {
+            if(c==null) { added=false; return; }
+            bool has=(c.depthTextureMode&DepthTextureMode.Depth)!=0;
+            if(want&&!has) { c.depthTextureMode|=DepthTextureMode.Depth; added=true; }
+            else if(!want&&has&&added) { c.depthTextureMode&=~DepthTextureMode.Depth; added=false; }
+        }
+        internal static void Release()
+        {
+            Want(Near,false,ref addedNear); Want(Far,false,ref addedFar);
+            Near=null; Far=null;
+            Shader.SetGlobalVector("_VefxClipRange",Vector4.zero);
+        }
+    }
+}
