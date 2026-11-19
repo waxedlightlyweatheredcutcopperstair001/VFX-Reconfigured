@@ -1,0 +1,15 @@
+# Build output
+build/
+**/obj/
+**/bin/
+# The packaged mod is generated; it's published as a GitHub Release zip instead of tracked here.
+GameData/
+# Release zips
+release/
+# Unity project caches (if a Unity project is opened from this repo)
+**/Library/
+**/Temp/
+**/Logs/
+**/UserSettings/
+# Python caches
+__pycache__/
