@@ -225,6 +225,23 @@ namespace VolumetricExplosionFX.Rendering
                         new Color(0.68f,0.66f,0.62f,0.32f));
                 }
             }
+            // VFX Reconfigured: lower-opacity smoke wraps around a burning explosion (it read as a bare glowing blob): a loose
+            // ring of large, faint puffs about the fireball's edge that drifts outward and up and thins with the smoke.
+            if(burning&&!reentry&&c.Air>0.1f&&plan.Warhead!=WarheadKind.Nuke)
+            {
+                float R=Mathf.Max((float)VolumeEvolution.FireballRadius(plan),radius);
+                int n=10+(int)Mathf.Min(8,(float)plan.VisualEnergyScore);
+                float alpha=0.16f*Mathf.Clamp((float)Reconfig.SmokeOpacity,0.1f,2)*Mathf.Clamp01((float)plan.FireFraction*1.5f);
+                Color grey=new Color((float)plan.SmokeR*0.9f,(float)plan.SmokeG*0.9f,(float)plan.SmokeB*0.9f,alpha);
+                for(int i=0;i<n;i++)
+                {
+                    Vector3 d=random.Direction(); if(c.Surface) d.y=Mathf.Abs(d.y)*0.6f;
+                    float puff=R*(0.7f+0.6f*random.Next());
+                    Vector3 at=d*R*(0.9f+0.4f*random.Next());
+                    Emit(smoke,Lift(at,puff),d*R*(0.12f+0.1f*random.Next())+Vector3.up*R*0.06f+wind*0.6f,puff,8+6*random.Next(),grey);
+                }
+                Horizon=Mathf.Max(Horizon,14);
+            }
             // VFX Reconfigured: a part that breaks up without burning (wing, structure, empty tank) throws out a cloud of dust
             // and fine smoke that hangs for a few seconds and settles.
             if(!burning&&!reentry&&c.Air>0.05f&&plan.Warhead==WarheadKind.None)
