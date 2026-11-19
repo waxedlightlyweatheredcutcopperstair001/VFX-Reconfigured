@@ -199,6 +199,8 @@ namespace VolumetricExplosionFX.Rendering
                 {
                     double tf=VolumeEvolution.FireballDuration(plan), rf=VolumeEvolution.FireballRadius(plan);
                     Vec4 g=NukeCloud.Glare(f,age,tf), h=NukeCloud.Halo(f,State.BoxRadius,1-FxPool.Daylight);
+                    double glowLeft=Reconfig.GlowLeft(plan,age);   // VFX Reconfigured: no glare once the glow time is over
+                    g=new Vec4(g.X,g.Y*glowLeft,g.Z*glowLeft,g.W); h=new Vec4(h.X,h.Y*glowLeft,h.Z*glowLeft,h.W);
                     showGlare=showVolume&&g.Y+g.Z+h.Y>0.01;
                     glareRenderer.enabled=showGlare;
                     if(showGlare)

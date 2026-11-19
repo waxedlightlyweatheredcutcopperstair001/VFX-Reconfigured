@@ -113,11 +113,24 @@ def deploy(out):
             for f in d.rglob('*'):
                 if f.is_file() and f.name != 'DefaultSettings.cfg':
                     keep[f.relative_to(target)] = f.read_bytes()
-    shutil.rmtree(target, ignore_errors=True)
-    shutil.copytree(out, target)
+    # The player's settings are also written to build/ first, so they survive even if the copy below fails.
+    backup = ROOT / 'build' / 'deploy-settings-backup'
+    shutil.rmtree(backup, ignore_errors=True)
     for rel, data in keep.items():
-        (target / rel).parent.mkdir(parents=True, exist_ok=True)
-        (target / rel).write_bytes(data)
+        (backup / rel).parent.mkdir(parents=True, exist_ok=True)
+        (backup / rel).write_bytes(data)
+    try:
+        try:
+            if target.exists():
+                shutil.rmtree(target)
+        except OSError as e:
+            sys.exit(f'Could not replace {target} ({e}). Is KSP running? Close it and deploy again. '
+                     f'Your settings are backed up in {backup}.')
+        shutil.copytree(out, target)
+    finally:
+        for rel, data in keep.items():
+            (target / rel).parent.mkdir(parents=True, exist_ok=True)
+            (target / rel).write_bytes(data)
     print(f'Deployed to {target}' + (f' (kept {len(keep)} settings file(s))' if keep else ''))
 
 

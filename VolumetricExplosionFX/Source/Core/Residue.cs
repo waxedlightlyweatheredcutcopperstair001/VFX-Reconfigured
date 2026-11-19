@@ -85,7 +85,7 @@ namespace VolumetricExplosionFX.Core
                 r.FireSeconds=Numbers.Clamp(seconds,3,maxSeconds);
                 if(plan.Look!=null&&plan.Look.Modern)
                 {
-                    r.Delay=Numbers.Clamp(0.55*VolumeEvolution.FireballDuration(plan),0.6,3);
+                    r.Delay=Numbers.Clamp(0.55*VolumeEvolution.FireballDuration(plan)/Reconfig.Speed(plan),0.6,3);   // (VFX Reconfigured: real seconds after the faster fireball)
                     r.Ramp=3.5; r.Patchy=1;
                     r.FireSeconds=Math.Min(r.FireSeconds+r.Delay,maxSeconds+r.Delay);
                 }
@@ -158,7 +158,7 @@ namespace VolumetricExplosionFX.Core
             double u=age/r.FireSeconds, spread=r.Ramp>0?Numbers.Clamp((age-r.Delay)/r.Ramp,0,1):Math.Min(1,age/1.8);
             return spread*spread*(3-2*spread)*Math.Sqrt(1-u);
         }
-        public static double SmokeStart(FxPlan plan) { return Math.Max(1.2,0.7*VolumeEvolution.FireballDuration(plan)); }
+        public static double SmokeStart(FxPlan plan) { return Math.Max(1.2,0.7*VolumeEvolution.FireballDuration(plan)/Reconfig.Speed(plan)); }
         // How the 1.1 ground mark looks (Scorch.shader _ScorchLook): 1 (0 = the 1.0 mark), crater (0 a burn, 1 a
         // warhead's crater, between: a hard crash's gouge), drawn out along a grazing impact (0..1), its direction (radians,
         // from the blast frame's x toward z). vx, vy, vz: the impact's velocity in the blast frame (m/s, y up).

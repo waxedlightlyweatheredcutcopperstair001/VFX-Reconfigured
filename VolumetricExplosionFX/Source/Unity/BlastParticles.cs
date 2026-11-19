@@ -230,7 +230,7 @@ namespace VolumetricExplosionFX.Rendering
             if(burning&&!reentry&&c.Air>0.1f&&plan.Warhead!=WarheadKind.Nuke)
             {
                 float R=Mathf.Max((float)VolumeEvolution.FireballRadius(plan),radius);
-                int n=10+(int)Mathf.Min(8,(float)plan.VisualEnergyScore);
+                int n=Mathf.Min(10+(int)Mathf.Min(8,(float)plan.VisualEnergyScore),Mathf.Max(4,settings.ParticlesPerEvent/12));
                 float alpha=0.16f*Mathf.Clamp((float)Reconfig.SmokeOpacity,0.1f,2)*Mathf.Clamp01((float)plan.FireFraction*1.5f);
                 Color grey=new Color((float)plan.SmokeR*0.9f,(float)plan.SmokeG*0.9f,(float)plan.SmokeB*0.9f,alpha);
                 for(int i=0;i<n;i++)
@@ -247,7 +247,7 @@ namespace VolumetricExplosionFX.Rendering
             if(!burning&&!reentry&&c.Air>0.05f&&plan.Warhead==WarheadKind.None)
             {
                 float r=Mathf.Max(radius,0.8f);
-                int n=8+(int)Mathf.Min(10,(float)plan.VisualEnergyScore*2);
+                int n=Mathf.Min(8+(int)Mathf.Min(10,(float)plan.VisualEnergyScore*2),Mathf.Max(4,settings.ParticlesPerEvent/12));
                 float alpha=0.24f*Mathf.Clamp((float)Reconfig.SmokeOpacity,0.1f,2);
                 for(int i=0;i<n;i++)
                 {

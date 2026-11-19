@@ -597,7 +597,7 @@ namespace VolumetricExplosionFX.Rendering
                 // warm glow from where it hangs.
                 double tf=VolumeEvolution.FireballDuration(plan), rf=VolumeEvolution.FireballRadius(plan);
                 double night=1-FxPool.Daylight;
-                want=(float)(NukeCloud.LightLevel(age,tf,night)*volume.State.LightScale*volume.State.Fade);
+                want=(float)(NukeCloud.LightLevel(age,tf,night)*volume.State.LightScale*volume.State.Fade*Reconfig.GlowLeft(plan,age));   // (VFX Reconfigured: dark after the glow time)
                 Vec3 c=NukeCloud.LightColour(age,tf); flash.color=new Color((float)c.X,(float)c.Y,(float)c.Z);
                 flash.range=(float)NukeCloud.LightRange(age,tf,rf,night,Math.Max(volume.Nuke.Ball.X,0.02)*volume.State.BoxRadius);
                 flash.transform.localPosition=Vector3.up*(float)(Math.Max(volume.Nuke.Ball.X,0.02)*volume.State.BoxRadius);

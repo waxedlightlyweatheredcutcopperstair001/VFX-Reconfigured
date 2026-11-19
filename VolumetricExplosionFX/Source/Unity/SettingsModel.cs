@@ -74,8 +74,11 @@ namespace VolumetricExplosionFX.Rendering
             Slider(general,L("WindowSize","Window size"),L("WindowSizeHint","Size of this window on the screen."),0.7f,1.3f,0.05f,
                 ()=>(float)s.UiSize,v=>s.UiSize=v,v=>(v*100).ToString("0",text.Culture)+" %");
             // VFX Reconfigured: explosion look and timing, and the ground effects.
+#if !UNITY_EDITOR
+            // (Not in the editor's settings preview: these pages live with the game code, Source/Ksp.)
             ReconfiguredPages.Look(m,s,text,Page,Slider,Section,Limit);
             ReconfiguredPages.Ground(m,text,Page,Slider,Toggle);
+#endif
             var blasts=Page(m,L("Explosions","Explosions"),UiGlyph.Blast);
             Section(blasts,L("Fireballs","Fireballs"));
             Toggle(blasts,L("Explosions","Explosions"),L("ExplosionsHint","Fire and smoke based on the destroyed part contents."),()=>s.Explosions,v=>s.Explosions=v);

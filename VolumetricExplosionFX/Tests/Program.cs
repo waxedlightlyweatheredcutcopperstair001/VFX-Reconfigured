@@ -1242,9 +1242,9 @@ class Program
                 var rcBattery=Plan(Part(1.225,new[]{new ResourceSnapshot("ElectricCharge",4000,4000,0)}));
                 var rcFlat=Plan(Part(1.225,new[]{new ResourceSnapshot("ElectricCharge",0,4000,0)}));
                 Check(rcTank.BurnableKg>0&&rcWing.BurnableKg==0&&rcStrut.BurnableKg==0&&rcEmpty.BurnableKg==0&&rcBattery.BurnableKg>5&&rcFlat.BurnableKg==0,
-                    "Wings and structure break up without a fireball; an rcEmpty rcTank doesn't explode; a battery burns by its charge");
+                    "Wings and structure break up without a fireball; an empty tank doesn't explode; a battery burns by its charge");
                 Check(Residue.Plan(rcTank,true,false,45).HasFire&&!Residue.Plan(Plan(withModules(new[]{"ModuleCommand"},new[]{R("MonoPropellant",300)})),true,false,45).HasFire,
-                    "Only rcFuel tanks and batteries leave a fire (not a command pod's monopropellant)");
+                    "Only fuel tanks and batteries leave a fire (not a command pod's monopropellant)");
                 double rcG=Reconfig.GlowSeconds(rcTank);
                 var rcGlowing=VolumeEvolution.Evaluate(rcTank,0.2,true,true,true); var rcDark=VolumeEvolution.Evaluate(rcTank,rcG+0.01,true,true,true);
                 Check(rcGlowing.FireHeat>0.05&&rcDark.FireHeat==0&&rcDark.Heat==0&&rcDark.Glow==0,"No glow after the glow time (1.5 s)");
