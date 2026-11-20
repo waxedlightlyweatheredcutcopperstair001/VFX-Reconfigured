@@ -136,6 +136,10 @@ Shader "VolumetricExplosionFX/SmokeShadow"
             float4 frag(v2f i):SV_Target
             {
                 float sceneEye=LinearEyeDepth(SAMPLE_DEPTH_TEXTURE_PROJ(_CameraDepthTexture,UNITY_PROJ_COORD(i.screen)));
+                // VFX Reconfigured: no shadow on what is close to the camera (the player's own craft flying through the
+                // area: the smoke's shadow, and a mismatched depth texture under anti-aliasing, painted dark patches on it).
+                float nearFade=smoothstep(25,60,sceneEye);
+                if(nearFade<=0) return 1;
                 float3 ray=i.world-_WorldSpaceCameraPos;
                 float rayEye=dot(ray,-UNITY_MATRIX_V[2].xyz);
                 if(rayEye<=1e-4) return 1;
@@ -155,7 +159,7 @@ Shader "VolumetricExplosionFX/SmokeShadow"
                         March(p,L,_L2,_A2,_D2,ground,jitter)+March(p,L,_L3,_A3,_D3,ground,jitter);
                     // Graded by how much smoke the sunlight crosses: a thin veil only dims the ground, the thick core shades
                     // it, never to black (the sky and the smoke's own scattered light still reach it).
-                    float shadeSim=(1-exp(-gas*6*_Shadow.z))*_Shadow.y*saturate(_Sun.w)*saturate((L.y-0.08)*5)*(1-smoothstep(0.7,1,length(area)));
+                    float shadeSim=(1-exp(-gas*6*_Shadow.z))*_Shadow.y*saturate(_Sun.w)*saturate((L.y-0.08)*5)*(1-smoothstep(0.7,1,length(area)))*nearFade;
                     return float4(1-shadeSim*float3(1,0.97,0.92),1);
                 }
                 depth=Through(p,L,_L0)+Through(p,L,_L1)+Through(p,L,_L2)+Through(p,L,_L3);
@@ -165,7 +169,7 @@ Shader "VolumetricExplosionFX/SmokeShadow"
                 depth*=0.45+1.1*n;
                 float2 c=area;
                 float edge=1-smoothstep(0.75,1,length(c));
-                float shade=(1-exp(-depth*_Shadow.z))*_Shadow.y*saturate(_Sun.w)*saturate(L.y*6)*edge;
+                float shade=(1-exp(-depth*_Shadow.z))*_Shadow.y*saturate(_Sun.w)*saturate(L.y*6)*edge*nearFade;
                 float3 keep=1-shade*float3(1,0.97,0.92);   // what the sky still lights is a little bluer
                 return float4(keep,1);
             }

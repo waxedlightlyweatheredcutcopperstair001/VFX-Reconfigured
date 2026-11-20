@@ -60,7 +60,7 @@ namespace VolumetricExplosionFX.Ksp
             s.SmokeHalfLife=Number(n,"smokeHalfLife",s.SmokeHalfLife); s.SmokeMaxSeconds=Number(n,"smokeMaxSeconds",s.SmokeMaxSeconds);
             s.NukeGlowSeconds=Number(n,"nukeGlowSeconds",s.NukeGlowSeconds); s.NukeSmokeHalfLife=Number(n,"nukeSmokeHalfLife",s.NukeSmokeHalfLife);
             s.SmokeOpacity=Number(n,"smokeOpacity",s.SmokeOpacity); s.EdgeGlow=Number(n,"edgeGlow",s.EdgeGlow);
-            s.Brightness=Number(n,"brightness",s.Brightness);
+            s.Brightness=Number(n,"brightness",s.Brightness); s.SmokeShadows=Flag(n,"smokeShadows",s.SmokeShadows);
             foreach(ConfigNode look in n.GetNodes(LookNode))
             {
                 LookKind kind;
@@ -96,7 +96,7 @@ namespace VolumetricExplosionFX.Ksp
             Add(n,"lookEditor",s.LookEditor); Add(n,"adaptivePerformance",s.Adaptive); Add(n,"volumeResolution",s.VolumeDivisor); Add(n,"videoMemorySaver",s.LowMemory); Add(n,"classicLook",s.Looks.UseClassic); Add(n,"uiStyle",s.UiStyle); Add(n,"uiStyleVersion",1); Add(n,"uiLayout",s.UiLayout); Add(n,"uiOpacity",s.UiOpacity); Add(n,"uiSize",s.UiSize);
             Add(n,"explosionSpeed",s.ExplosionSpeed); Add(n,"glowSeconds",s.GlowSeconds); Add(n,"smokeHalfLife",s.SmokeHalfLife);
             Add(n,"smokeMaxSeconds",s.SmokeMaxSeconds); Add(n,"nukeGlowSeconds",s.NukeGlowSeconds); Add(n,"nukeSmokeHalfLife",s.NukeSmokeHalfLife);
-            Add(n,"smokeOpacity",s.SmokeOpacity); Add(n,"edgeGlow",s.EdgeGlow); Add(n,"brightness",s.Brightness);
+            Add(n,"smokeOpacity",s.SmokeOpacity); Add(n,"edgeGlow",s.EdgeGlow); Add(n,"brightness",s.Brightness); Add(n,"smokeShadows",s.SmokeShadows);
             // Only edited profiles are written, so untouched kinds follow future shipped defaults.
             foreach(LookKind kind in Enum.GetValues(typeof(LookKind)))
             {

@@ -21,7 +21,7 @@ namespace VolumetricExplosionFX.Rendering
         {
             NukeFrame f=volume.Nuke; Vector4 sun=volume.Sun;
             float fade=(float)f.Dust.W, box=(float)volume.State.BoxRadius, reach=0.95f*box;
-            bool on=volume.Active&&fade>0.01f&&sun.y>0.05f&&sun.w>0.05f&&box>0;
+            bool on=volume.Active&&fade>0.01f&&sun.y>0.05f&&sun.w>0.05f&&box>0&&Reconfig.SmokeShadows;
             nukeShade.enabled=on;
             if(!on) return;
             // The box: the ground round the blast, from below its lowest ground to above its highest.
@@ -558,7 +558,7 @@ namespace VolumetricExplosionFX.Rendering
             if(hasShadow)
             {
                 Vec4 sh=VolumeEvolution.Shadow(volume.State,scorchSeed);
-                bool on=volume.Active&&sh.Y>0.005;
+                bool on=volume.Active&&sh.Y>0.005&&Reconfig.SmokeShadows;
                 shadow.enabled=on; ShadowWeight=on?(float)(sh.Y*sh.Z):0;
                 if(on)
                 {

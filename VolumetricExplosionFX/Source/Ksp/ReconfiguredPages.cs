@@ -32,6 +32,9 @@ namespace VolumetricExplosionFX.Rendering
                 0.1f,2,0.05f,()=>(float)s.SmokeOpacity,v=>s.SmokeOpacity=v,Times);
             slider(p,L("ReconfEdgeGlow","Glow at the plume's edges"),L("ReconfEdgeGlowHint","How much the glow gathers at the top and outer edges of the rising plume, over a darker, smoky body. 0: VEFX's original glow."),
                 0,1,0.05f,()=>(float)s.EdgeGlow,v=>s.EdgeGlow=v,v=>(v*100).ToString("0",text.Culture)+" %");
+            p.Rows.Add(new UiRow { Kind=UiRowKind.Toggle, Label=L("ReconfShadows","Smoke shadows"),
+                Hint=L("ReconfShadowsHint","Explosion smoke shades the ground under it. Never drawn on things close to the camera, such as your own craft."),
+                GetBool=()=>s.SmokeShadows, SetBool=v=>s.SmokeShadows=v });
             section(p,L("ReconfNuclear","Nuclear explosions"));
             slider(p,L("ReconfNukeGlow","Nuclear glow time"),L("ReconfNukeGlowHint","How long a 20 kt nuclear fireball and its rolling cloud glow; bigger bombs glow longer (a megaton: about a minute)."),
                 2,60,1,()=>(float)s.NukeGlowSeconds,v=>s.NukeGlowSeconds=v,v=>v.ToString("0",text.Culture)+" s");

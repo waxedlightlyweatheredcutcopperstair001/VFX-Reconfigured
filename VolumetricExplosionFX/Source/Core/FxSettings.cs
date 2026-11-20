@@ -19,6 +19,7 @@ namespace VolumetricExplosionFX.Core
         // VFX Reconfigured: explosion timing and look (see Reconfig).
         public double ExplosionSpeed=1.5, GlowSeconds=1.5, SmokeHalfLife=3, SmokeMaxSeconds=60, NukeGlowSeconds=12, NukeSmokeHalfLife=90;
         public double SmokeOpacity=1, EdgeGlow=1, Brightness=1.4;
+        public bool SmokeShadows=true;
         public bool PartDebris=true, Residue=true;
         public Quality Quality=Quality.Ultra;
         public int MaxEvents=32, MaxDebris=3072, MaxLights=6, ParticlesPerEvent=256;
@@ -77,7 +78,7 @@ namespace VolumetricExplosionFX.Core
             DebrisTriangles=o.DebrisTriangles; ResidueSeconds=o.ResidueSeconds; Distance=o.Distance; Intensity=o.Intensity; DebrisDensity=o.DebrisDensity;
             Looks=o.Looks; LookEditor=o.LookEditor; Adaptive=o.Adaptive; VolumeDivisor=o.VolumeDivisor; LowMemory=o.LowMemory;
             ExplosionSpeed=o.ExplosionSpeed; GlowSeconds=o.GlowSeconds; SmokeHalfLife=o.SmokeHalfLife; SmokeMaxSeconds=o.SmokeMaxSeconds;
-            NukeGlowSeconds=o.NukeGlowSeconds; NukeSmokeHalfLife=o.NukeSmokeHalfLife; SmokeOpacity=o.SmokeOpacity; EdgeGlow=o.EdgeGlow; Brightness=o.Brightness;
+            NukeGlowSeconds=o.NukeGlowSeconds; NukeSmokeHalfLife=o.NukeSmokeHalfLife; SmokeOpacity=o.SmokeOpacity; EdgeGlow=o.EdgeGlow; Brightness=o.Brightness; SmokeShadows=o.SmokeShadows;
             CameraShake=o.CameraShake; PhotoMode=o.PhotoMode; Profile=o.Profile; UiStyle=o.UiStyle; UiLayout=o.UiLayout; UiOpacity=o.UiOpacity; UiSize=o.UiSize;
         }
         public string Structure { get { return Volumetric+"|"+MaxEvents+"|"+ParticlesPerEvent+"|"+MaxDebrisParts; } }

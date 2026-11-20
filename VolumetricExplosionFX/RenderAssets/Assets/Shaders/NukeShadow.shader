@@ -68,6 +68,10 @@ Shader "VolumetricExplosionFX/NukeShadow"
             float4 frag(v2f i):SV_Target
             {
                 float sceneEye=LinearEyeDepth(SAMPLE_DEPTH_TEXTURE_PROJ(_CameraDepthTexture,UNITY_PROJ_COORD(i.screen)));
+                // VFX Reconfigured: no shadow on what is close to the camera (the player's own craft flying through the
+                // area: the smoke's shadow, and a mismatched depth texture under anti-aliasing, painted dark patches on it).
+                float nearFade=smoothstep(25,60,sceneEye);
+                if(nearFade<=0) return 1;
                 float3 ray=i.world-_WorldSpaceCameraPos;
                 float rayEye=dot(ray,-UNITY_MATRIX_V[2].xyz);
                 if(rayEye<=1e-4) return 1;
@@ -83,7 +87,7 @@ Shader "VolumetricExplosionFX/NukeShadow"
                 // Billowed, not a disc: the cloud's lumps break up the shadow's edge and its inside.
                 float n=tex3D(_NoiseTex,p*1.7+_Shadow.w*0.031).r*0.65+tex3D(_NoiseTex,p*4.1-_Shadow.w*0.017).g*0.35;
                 depth*=0.45+1.1*n;
-                float shade=(1-exp(-depth*_Shadow.z))*_Shadow.y*saturate(_Sun.w)*saturate(L.y*6)*(1-smoothstep(0.8,1,rr));
+                float shade=(1-exp(-depth*_Shadow.z))*_Shadow.y*saturate(_Sun.w)*saturate(L.y*6)*(1-smoothstep(0.8,1,rr))*nearFade;
                 return float4(1-shade*float3(1,0.97,0.92),1);   // (what the sky still lights is a little bluer)
             }
             ENDCG

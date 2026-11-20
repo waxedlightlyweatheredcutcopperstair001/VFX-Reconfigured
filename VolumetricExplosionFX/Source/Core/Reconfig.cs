@@ -35,6 +35,7 @@ namespace VolumetricExplosionFX.Core
             return S.GlowSeconds * Numbers.Clamp(Math.Pow(Math.Max(radius, 0.1) / 12, 0.6), 0.15, 3);
         }
         public static double Brightness => S.Brightness;
+        public static bool SmokeShadows => S.SmokeShadows;
         public static double SmokeHalfLife(FxPlan plan) => plan != null && plan.Warhead == WarheadKind.Nuke ? S.NukeSmokeHalfLife : S.SmokeHalfLife;
         public static double SmokeOpacity => S.SmokeOpacity;
         public static double EdgeGlow => S.EdgeGlow;
