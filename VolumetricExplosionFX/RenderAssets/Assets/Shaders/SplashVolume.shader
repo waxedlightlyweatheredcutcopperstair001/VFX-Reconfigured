@@ -39,6 +39,10 @@ Shader "VolumetricExplosionFX/SplashVolume"
             #pragma target 3.0
             #pragma only_renderers d3d11 glcore metal
             #include "UnityCG.cginc"
+            // VFX Reconfigured: aerial perspective (C#: AerialPerspective): rgb x transmittance + sky x (1 - transmittance),
+            // premultiplied. _AerialT.w = 0: not set (no change).
+            float4 _AerialT, _AerialIn;
+            float4 Aerial(float4 c) { return _AerialT.w>0.5?float4(c.rgb*_AerialT.rgb+_AerialIn.rgb*c.a*(1-_AerialT.rgb),c.a):c; }
             #include "VolumeDepth.cginc"
             UNITY_DECLARE_DEPTH_TEXTURE(_CameraDepthTexture);
             sampler3D _NoiseTex;
@@ -320,7 +324,7 @@ Shader "VolumetricExplosionFX/SplashVolume"
                 }
                 float a=1-T;
                 float3 rgb=col;
-                if(front>0)
+                if(front>0&&_AerialT.w<0.5)   // (VFX Reconfigured: the shared aerial perspective replaces this when set)
                 {
                     float fog=(1-exp(-front/40000.0))*saturate(_Context.y)*0.8;
                     float3 haze=lerp(sky*1.25,max(sky*2.2,float3(0.62,0.7,0.8)),smoothstep(-0.05,0.2,L.y));
@@ -328,7 +332,7 @@ Shader "VolumetricExplosionFX/SplashVolume"
                 }
                 float4 res=float4(rgb,a);
                 res+=(1-res.a)*foam;
-                fo.colour=res;
+                fo.colour=Aerial(res);   // VFX Reconfigured: aerial perspective
                 float eye=front>0?front*rayEye:0;
                 fo.front=float4(eye*a,0,0,eye>0?a:0);
                 return fo;

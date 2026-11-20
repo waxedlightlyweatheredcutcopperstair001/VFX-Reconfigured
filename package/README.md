@@ -1,4 +1,4 @@
-# Volumetric FX Reconfigured 0.2.0
+# Volumetric FX Reconfigured 0.3.0
 
 Volumetric explosions, fire, smoke and wreckage, and volumetric engine dust and steam, for Kerbal Space Program
 1.12.5, in one mod. Based on **Volumetric Explosion FX** 1.1.1 and **Volumetric Ground FX** 1.1.0 by Warnix (both MIT),
@@ -28,6 +28,8 @@ Windows (DirectX 11). One toolbar button opens the settings, in flight and at th
   it makes a small cook-off; an unarmed nuclear weapon doesn't explode at all.
 - Nuclear air bursts: the fireball rises clear of the ground into a rolling cloud with a rounded underside, no dust stem
   above a low burst, and a faint ring of dust swept along the ground. Ground bursts keep their stem and skirt.
+
+- Distant explosions are veiled by the atmosphere like the land around them (Atmospheric haze; works with Scatterer).
 
 **Engine dust**
 - The big billowing launch plumes only appear on launch pads (not a plane on the runway).

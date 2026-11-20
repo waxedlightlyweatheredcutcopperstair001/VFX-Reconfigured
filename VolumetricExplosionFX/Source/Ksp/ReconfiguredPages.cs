@@ -35,6 +35,8 @@ namespace VolumetricExplosionFX.Rendering
             p.Rows.Add(new UiRow { Kind=UiRowKind.Toggle, Label=L("ReconfShadows","Smoke shadows"),
                 Hint=L("ReconfShadowsHint","Explosion smoke shades the ground under it. Never drawn on things close to the camera, such as your own craft."),
                 GetBool=()=>s.SmokeShadows, SetBool=v=>s.SmokeShadows=v });
+            slider(p,L("ReconfHaze","Atmospheric haze"),L("ReconfHazeHint","Distant explosions and ground clouds are veiled in the sky's colour by the air in between, like the land (Scatterer's own strength for the planet is followed). 0: off."),
+                0,3,0.05f,()=>(float)s.AtmosphericHaze,v=>s.AtmosphericHaze=v,Times);
             section(p,L("ReconfNuclear","Nuclear explosions"));
             slider(p,L("ReconfNukeGlow","Nuclear glow time"),L("ReconfNukeGlowHint","How long a 20 kt nuclear fireball and its rolling cloud glow; bigger bombs glow longer (a megaton: about a minute)."),
                 2,60,1,()=>(float)s.NukeGlowSeconds,v=>s.NukeGlowSeconds=v,v=>v.ToString("0",text.Culture)+" s");

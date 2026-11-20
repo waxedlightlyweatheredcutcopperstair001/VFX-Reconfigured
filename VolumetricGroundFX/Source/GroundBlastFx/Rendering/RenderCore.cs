@@ -972,6 +972,7 @@ namespace GroundBlastFx.Rendering
             // Profondeur au-delà de laquelle aucun nuage n'existe : le suréchantillonnage n'a pas à distinguer le ciel d'un
             // sol lointain derrière le nuage (sinon une ligne apparaît à l'horizon à travers le nuage).
             float volFar = 1f;
+            float nearestCluster = float.MaxValue; Vector3 nearestCenter = Vector3.zero;
             for (int s = 0; s < MaxClusters; s++)
             {
                 if (_params[s].x < 0.002f) continue;
@@ -979,6 +980,8 @@ namespace GroundBlastFx.Rendering
                 float radius = Mathf.Sqrt(2f * _gridO[s].w * _gridO[s].w + _gridU[s].w * _gridU[s].w);
                 if (_params[s].w > 0.5f) { center = _points[s]; radius = Mathf.Max(_points[s].w, 50f) * 1.2f; }
                 volFar = Mathf.Max(volFar, Vector3.Distance(origin, center) + radius);
+                float d = Vector3.Distance(origin, center);
+                if (d < nearestCluster) { nearestCluster = d; nearestCenter = center; }
             }
             m.SetFloat("_GEVolFar", volFar);
             UpdateCamera(cam);
@@ -987,7 +990,16 @@ namespace GroundBlastFx.Rendering
             m.SetColor("_GESunColor", env.SunColor);
             m.SetColor("_GEAmbientSky", env.AmbientSky);
             m.SetColor("_GEAmbientGround", env.AmbientGround);
-            m.SetVector("_GEFog", new Vector4(env.FogColor.r, env.FogColor.g, env.FogColor.b, env.FogDensity));
+            // VFX Reconfigured: the same aerial perspective as the explosions (VFXReconfigured.AerialPerspective), toward the
+            // nearest cloud: its transmittance turned into this shader's uniform fog density over that distance.
+            Vector4 fog = new Vector4(env.FogColor.r, env.FogColor.g, env.FogColor.b, env.FogDensity);
+            if (nearestCluster < float.MaxValue && nearestCluster > 30f &&
+                VFXReconfigured.AerialPerspective.Compute(nearestCenter, out Vector4 aerialT, out Vector4 aerialIn))
+            {
+                float t = Mathf.Clamp((aerialT.x + aerialT.y + aerialT.z) / 3f, 1e-3f, 1f);
+                fog = new Vector4(aerialIn.x, aerialIn.y, aerialIn.z, -Mathf.Log(t) / nearestCluster);
+            }
+            m.SetVector("_GEFog", fog);
             m.SetFloat("_GETime", env.Time);
             m.SetInt("_GESteps", _quality == QualityLevel.Low ? 18 : _quality == QualityLevel.Medium ? 31 : _quality == QualityLevel.High ? 64 : 96);
             m.SetInt("_GELightSteps", _quality == QualityLevel.Low ? 2 : _quality == QualityLevel.Medium ? 3 : _quality == QualityLevel.High ? 4 : 5);

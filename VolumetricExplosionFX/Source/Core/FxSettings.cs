@@ -20,6 +20,7 @@ namespace VolumetricExplosionFX.Core
         public double ExplosionSpeed=1.5, GlowSeconds=1.5, SmokeHalfLife=3, SmokeMaxSeconds=60, NukeGlowSeconds=12, NukeSmokeHalfLife=90;
         public double SmokeOpacity=1, EdgeGlow=1, Brightness=1.4;
         public bool SmokeShadows=true;
+        public double AtmosphericHaze=1;
         public bool PartDebris=true, Residue=true;
         public Quality Quality=Quality.Ultra;
         public int MaxEvents=32, MaxDebris=3072, MaxLights=6, ParticlesPerEvent=256;
@@ -78,7 +79,7 @@ namespace VolumetricExplosionFX.Core
             DebrisTriangles=o.DebrisTriangles; ResidueSeconds=o.ResidueSeconds; Distance=o.Distance; Intensity=o.Intensity; DebrisDensity=o.DebrisDensity;
             Looks=o.Looks; LookEditor=o.LookEditor; Adaptive=o.Adaptive; VolumeDivisor=o.VolumeDivisor; LowMemory=o.LowMemory;
             ExplosionSpeed=o.ExplosionSpeed; GlowSeconds=o.GlowSeconds; SmokeHalfLife=o.SmokeHalfLife; SmokeMaxSeconds=o.SmokeMaxSeconds;
-            NukeGlowSeconds=o.NukeGlowSeconds; NukeSmokeHalfLife=o.NukeSmokeHalfLife; SmokeOpacity=o.SmokeOpacity; EdgeGlow=o.EdgeGlow; Brightness=o.Brightness; SmokeShadows=o.SmokeShadows;
+            NukeGlowSeconds=o.NukeGlowSeconds; NukeSmokeHalfLife=o.NukeSmokeHalfLife; SmokeOpacity=o.SmokeOpacity; EdgeGlow=o.EdgeGlow; Brightness=o.Brightness; SmokeShadows=o.SmokeShadows; AtmosphericHaze=o.AtmosphericHaze;
             CameraShake=o.CameraShake; PhotoMode=o.PhotoMode; Profile=o.Profile; UiStyle=o.UiStyle; UiLayout=o.UiLayout; UiOpacity=o.UiOpacity; UiSize=o.UiSize;
         }
         public string Structure { get { return Volumetric+"|"+MaxEvents+"|"+ParticlesPerEvent+"|"+MaxDebrisParts; } }
@@ -95,7 +96,7 @@ namespace VolumetricExplosionFX.Core
             ExplosionSpeed=Numbers.Clamp(ExplosionSpeed,0.5,3); GlowSeconds=Numbers.Clamp(GlowSeconds,0.3,6);
             SmokeHalfLife=Numbers.Clamp(SmokeHalfLife,0.5,30); SmokeMaxSeconds=Numbers.Clamp(SmokeMaxSeconds,5,180);
             NukeGlowSeconds=Numbers.Clamp(NukeGlowSeconds,2,60); NukeSmokeHalfLife=Numbers.Clamp(NukeSmokeHalfLife,5,300);
-            SmokeOpacity=Numbers.Clamp(SmokeOpacity,0.1,2); EdgeGlow=Numbers.Clamp(EdgeGlow,0,1); Brightness=Numbers.Clamp(Brightness,0.5,2.5);
+            SmokeOpacity=Numbers.Clamp(SmokeOpacity,0.1,2); EdgeGlow=Numbers.Clamp(EdgeGlow,0,1); Brightness=Numbers.Clamp(Brightness,0.5,2.5); AtmosphericHaze=Numbers.Clamp(AtmosphericHaze,0,3);
             UiStyle=(int)Numbers.Clamp(UiStyle,0,5); UiLayout=(int)Numbers.Clamp(UiLayout,0,2);
             UiOpacity=Numbers.Clamp(UiOpacity,0.35,1); UiSize=Numbers.Clamp(UiSize,0.7,1.3);
         }

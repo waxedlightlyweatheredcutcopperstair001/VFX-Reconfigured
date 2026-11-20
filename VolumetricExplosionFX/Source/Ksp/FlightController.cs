@@ -226,6 +226,7 @@ namespace VolumetricExplosionFX.Ksp
         }
         void Update()
         {
+            if(settings!=null) VFXReconfigured.AerialPerspective.Strength=(float)settings.AtmosphericHaze;   // (explosions and ground effects)
             if(pool==null)
             {
                 if(settings!=null&&settings.Enabled&&!subscribed&&failures==0) Init();

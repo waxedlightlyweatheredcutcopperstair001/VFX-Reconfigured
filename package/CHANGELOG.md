@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0
+- Atmospheric haze: distant explosions, nuclear clouds, splashes and engine ground clouds are veiled in the sky's colour
+  by the air between them and the camera, like the land around them (they stayed crisp and saturated). Original model:
+  the air's real density along the view, blue-shifted with distance, warmer at dusk, dark at night; follows Scatterer's
+  strength for the planet when installed. Setting: Explosion look > Atmospheric haze.
+
 ## 0.2.0
 - New default window theme, Simple: the BDArmory Lite look (near-black, grey, white, orange).
 - Explosion brightness setting (default 1.4): a brighter, whiter-hot flash (1.0: the original, dimmer and redder).

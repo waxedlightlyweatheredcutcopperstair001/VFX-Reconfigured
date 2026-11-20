@@ -137,6 +137,10 @@ Shader "VolumetricExplosionFX/HeroVolume"
                 #endif
             }
             float3 Glow(float t) { return -log(1-min(FlameColour(saturate(t)),0.985)); }
+            // VFX Reconfigured: aerial perspective (C#: AerialPerspective): rgb x transmittance + sky x (1 - transmittance),
+            // premultiplied. _AerialT.w = 0: not set (no change).
+            float4 _AerialT, _AerialIn;
+            float4 Aerial(float4 c) { return _AerialT.w>0.5?float4(c.rgb*_AerialT.rgb+_AerialIn.rgb*c.a*(1-_AerialT.rgb),c.a):c; }
             // VFX Reconfigured: explosion brightness (_Reconf.y, 1 = VEFX's): brighter and whiter-hot flames (a dim, red blast
             // reads as weak). 0 (not set): unchanged.
             float Bright() { return _Reconf.y>0.001?_Reconf.y:1; }
@@ -1169,7 +1173,7 @@ Shader "VolumetricExplosionFX/HeroVolume"
                 if(pend0) acc=Over(acc,ShellCrossing(o+d*t0,rsl,path,dn,soft0));
                 if(pendc) { float4 core=CoreLayer(cb2,cp,coreVisible); emis+=(1-acc.a)*core.rgb; acc.a+=(1-acc.a)*core.a; }
                 if(pend1) acc=Over(acc,ShellCrossing(o+d*t1,rsl,path,dn,soft1));
-                return float4(acc.rgb+Expose(emis),acc.a);
+                return Aerial(float4(acc.rgb+Expose(emis),acc.a));
             }
             #ifdef VEFX_SIM
             // 1.1: the colour, and in a second target the eye depth of the cloud's opaque front weighted by its coverage
