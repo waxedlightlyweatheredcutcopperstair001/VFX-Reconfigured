@@ -137,6 +137,10 @@ Shader "VolumetricExplosionFX/HeroVolume"
                 #endif
             }
             float3 Glow(float t) { return -log(1-min(FlameColour(saturate(t)),0.985)); }
+            // VFX Reconfigured: explosion brightness (_Reconf.y, 1 = VEFX's): brighter and whiter-hot flames (a dim, red blast
+            // reads as weak). 0 (not set): unchanged.
+            float Bright() { return _Reconf.y>0.001?_Reconf.y:1; }
+            float BrightT(float t) { float b=Bright(); return saturate(t*(1+0.45*(b-1))+0.06*(b-1)*step(0.05,t)); }
             float3 Expose(float3 e) { return 1-exp(-e); }
             float3 Rotate(float3 v,float3 axis,float angle)
             {
@@ -1028,11 +1032,11 @@ Shader "VolumetricExplosionFX/HeroVolume"
                                 // Lightning lights the cloud from inside for a tenth of a second, blue-white.
                                 if(litB) lit+=albedo*float3(0.75,0.82,1)*LightFall(bolt,reachB,p)*lerp(5,1.6,daylit);
                             }
-                            float glowT=f.y;
+                            float glowT=BrightT(f.y);
                             // Burning aluminium (solid propellant) glows yellow-white through its white smoke, not red (pink).
                             glowT=lerp(glowT,saturate(glowT*1.25+0.12),saturate((dot(_Smoke.rgb,0.3333)-0.45)*3));
                             // Flames facing the sun read a little brighter: relief, without a hard terminator.
-                            float3 e=Glow(glowT)*(1-0.92*f.z)*lerp(0.62,1.22,saturate(exp(-0.45*od)*1.1));
+                            float3 e=Glow(glowT)*(1-0.92*f.z)*lerp(0.62,1.22,saturate(exp(-0.45*od)*1.1))*Bright();
                             // A hydrogen flame is faint (a pale pinkish orange, not a white-hot ball).
                             e*=_SimFlame.x;
                             // By day the dull red of cooling soot is lost against the sunlit smoke; only real flame shows. At
@@ -1117,10 +1121,10 @@ Shader "VolumetricExplosionFX/HeroVolume"
                                 if(litB) lit+=albedo*float3(0.75,0.82,1)*LightFall(bolt,reachB,p)*lerp(5,1.6,daylit);
                             }
                             #endif
-                            float glowT=f.y;
+                            float glowT=BrightT(f.y);
                             // Burning aluminium (solid propellant) glows yellow-white through its white smoke, not red (pink).
                             if(simMode) glowT=lerp(glowT,saturate(glowT*1.25+0.12),saturate((dot(_Smoke.rgb,0.3333)-0.45)*3));
-                            float3 e=Glow(glowT)*(1-0.92*f.z)*(simMode?lerp(0.5,1.3,shade):lerp(0.7,1.2,shade));
+                            float3 e=Glow(glowT)*(1-0.92*f.z)*(simMode?lerp(0.5,1.3,shade):lerp(0.7,1.2,shade))*Bright();
                             // Light smoke (aluminium oxide) does not glow red as it cools: only the flame itself shines.
                             if(simMode) e*=lerp(1,glowShare,pale);
                             // White (solid propellant) flame: less light so its billows and hotter cores still read, not one white blob.

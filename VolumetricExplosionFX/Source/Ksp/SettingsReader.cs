@@ -51,13 +51,16 @@ namespace VolumetricExplosionFX.Ksp
             s.LookEditor=Flag(n,"lookEditor",s.LookEditor); s.Adaptive=Flag(n,"adaptivePerformance",s.Adaptive);
             s.LowMemory=(int)Number(n,"videoMemorySaver",s.LowMemory);
             s.Looks.UseClassic=Flag(n,"classicLook",s.Looks.UseClassic);
-            s.UiStyle=(int)Number(n,"uiStyle",s.UiStyle); s.UiLayout=(int)Number(n,"uiLayout",s.UiLayout);
+            s.UiStyle=(int)Number(n,"uiStyle",s.UiStyle);
+            s.UiLayout=(int)Number(n,"uiLayout",s.UiLayout);
+            if(Number(n,"uiStyleVersion",0)<1) s.UiStyle=5;   // VFX Reconfigured: settings saved before the Simple theme switch to it once
             s.UiOpacity=Number(n,"uiOpacity",s.UiOpacity); s.UiSize=Number(n,"uiSize",s.UiSize);
             // VFX Reconfigured
             s.ExplosionSpeed=Number(n,"explosionSpeed",s.ExplosionSpeed); s.GlowSeconds=Number(n,"glowSeconds",s.GlowSeconds);
             s.SmokeHalfLife=Number(n,"smokeHalfLife",s.SmokeHalfLife); s.SmokeMaxSeconds=Number(n,"smokeMaxSeconds",s.SmokeMaxSeconds);
             s.NukeGlowSeconds=Number(n,"nukeGlowSeconds",s.NukeGlowSeconds); s.NukeSmokeHalfLife=Number(n,"nukeSmokeHalfLife",s.NukeSmokeHalfLife);
             s.SmokeOpacity=Number(n,"smokeOpacity",s.SmokeOpacity); s.EdgeGlow=Number(n,"edgeGlow",s.EdgeGlow);
+            s.Brightness=Number(n,"brightness",s.Brightness);
             foreach(ConfigNode look in n.GetNodes(LookNode))
             {
                 LookKind kind;
@@ -90,10 +93,10 @@ namespace VolumetricExplosionFX.Ksp
             Add(n,"maximumEvents",s.MaxEvents); Add(n,"maximumDebris",s.MaxDebris); Add(n,"maximumLights",s.MaxLights);
             Add(n,"particlesPerEvent",s.ParticlesPerEvent); Add(n,"maximumVolumes",s.MaxVolumes); Add(n,"volumeSteps",s.VolumeSteps);
             Add(n,"maximumDebrisParts",s.MaxDebrisParts); Add(n,"debrisTrianglesPerPart",s.DebrisTriangles);
-            Add(n,"lookEditor",s.LookEditor); Add(n,"adaptivePerformance",s.Adaptive); Add(n,"volumeResolution",s.VolumeDivisor); Add(n,"videoMemorySaver",s.LowMemory); Add(n,"classicLook",s.Looks.UseClassic); Add(n,"uiStyle",s.UiStyle); Add(n,"uiLayout",s.UiLayout); Add(n,"uiOpacity",s.UiOpacity); Add(n,"uiSize",s.UiSize);
+            Add(n,"lookEditor",s.LookEditor); Add(n,"adaptivePerformance",s.Adaptive); Add(n,"volumeResolution",s.VolumeDivisor); Add(n,"videoMemorySaver",s.LowMemory); Add(n,"classicLook",s.Looks.UseClassic); Add(n,"uiStyle",s.UiStyle); Add(n,"uiStyleVersion",1); Add(n,"uiLayout",s.UiLayout); Add(n,"uiOpacity",s.UiOpacity); Add(n,"uiSize",s.UiSize);
             Add(n,"explosionSpeed",s.ExplosionSpeed); Add(n,"glowSeconds",s.GlowSeconds); Add(n,"smokeHalfLife",s.SmokeHalfLife);
             Add(n,"smokeMaxSeconds",s.SmokeMaxSeconds); Add(n,"nukeGlowSeconds",s.NukeGlowSeconds); Add(n,"nukeSmokeHalfLife",s.NukeSmokeHalfLife);
-            Add(n,"smokeOpacity",s.SmokeOpacity); Add(n,"edgeGlow",s.EdgeGlow);
+            Add(n,"smokeOpacity",s.SmokeOpacity); Add(n,"edgeGlow",s.EdgeGlow); Add(n,"brightness",s.Brightness);
             // Only edited profiles are written, so untouched kinds follow future shipped defaults.
             foreach(LookKind kind in Enum.GetValues(typeof(LookKind)))
             {

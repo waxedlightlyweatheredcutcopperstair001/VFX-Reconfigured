@@ -289,6 +289,7 @@ namespace VolumetricExplosionFX.Core
             s.Heat*=glow; s.Glow*=glow; s.FireHeat*=glow; s.Pulse*=glow;
             for(int i=0;i<BlastLayout.Count;i++) { LobeState l=s.Lobe(i); l.Heat*=glow; s.SetLobe(i,l); }
             s.Fade*=Reconfig.SmokeLeft(plan,real);
+            s.LightScale*=0.5+0.5*Reconfig.Brightness;   // a brighter blast lights its surroundings more (half as strongly)
             s.FireBody=Numbers.Clamp(s.FireBody*Reconfig.SmokeOpacity,0,1);
         }
         /// <summary>VFX Reconfigured: the cloud's lifetime on the fireball's own (faster) clock, capped by the smoke limit.</summary>

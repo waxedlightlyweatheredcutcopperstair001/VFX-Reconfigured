@@ -1253,6 +1253,10 @@ class Program
                 var nukeReconf=new FxPlan{ Atmosphere=1, Look=LookProfile.Default(LookKind.Tank) }; Warhead.Apply(nukeReconf,new WarheadInfo{ Kind=WarheadKind.Nuke, TntKg=2e7, RangeM=900 });
                 Check(Reconfig.Speed(nukeReconf)==1&&Reconfig.GlowSeconds(nukeReconf)>rcG&&Reconfig.SmokeHalfLife(nukeReconf)>Reconfig.SmokeHalfLife(rcTank),
                     "Nuclear clouds keep real time, glow longer and thin out more slowly");
+                var rcSmall=Plan(Part(1.225,new[]{R("LiquidFuel",2),R("Oxidizer",2)})); var rcBig=Plan(Part(1.225,new[]{R("LiquidFuel",40000),R("Oxidizer",40000)}));
+                var rcMegaton=new FxPlan{ Atmosphere=1, Look=LookProfile.Default(LookKind.Tank) }; Warhead.Apply(rcMegaton,new WarheadInfo{ Kind=WarheadKind.Nuke, TntKg=1e9, RangeM=900 });
+                Check(Reconfig.GlowSeconds(rcSmall)<0.8&&Reconfig.GlowSeconds(rcBig)>2.5&&Reconfig.GlowSeconds(rcMegaton)>45&&Reconfig.GlowSeconds(rcMegaton)<70,
+                    "Small explosions flash briefly, big ones glow longer; a megaton fireball glows for about a minute");
             }
             Console.WriteLine("Verified assertions: "+count);
         }

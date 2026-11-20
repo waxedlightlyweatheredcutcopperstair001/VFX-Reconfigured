@@ -19,19 +19,21 @@ namespace VolumetricExplosionFX.Rendering
             section(p,L("ReconfTiming","Timing"));
             slider(p,L("ReconfSpeed","Explosion speed"),L("ReconfSpeedHint","How fast fireballs and their smoke play out (1.00: VEFX's original pace). The shockwave and flying debris keep their own pace; nuclear clouds keep real time."),
                 0.5f,3,0.05f,()=>(float)s.ExplosionSpeed,v=>s.ExplosionSpeed=v,Times);
-            slider(p,L("ReconfGlow","Glow time"),L("ReconfGlowHint","The burning gas glows for at most this long; only fuel and battery fires glow longer."),
+            slider(p,L("ReconfGlow","Glow time"),L("ReconfGlowHint","How long a medium explosion glows. Small ones flash briefly, big ones glow up to three times longer; only fuel and battery fires glow beyond that."),
                 0.3f,6,0.1f,()=>(float)s.GlowSeconds,v=>s.GlowSeconds=v,Sec);
             slider(p,L("ReconfHalfLife","Smoke half-life"),L("ReconfHalfLifeHint","Once the glow is gone, the smoke's opacity halves this often."),
                 0.5f,30,0.5f,()=>(float)s.SmokeHalfLife,v=>s.SmokeHalfLife=v,Sec);
             slider(p,L("ReconfMaxSmoke","Longest smoke"),L("ReconfMaxSmokeHint","An explosion's smoke is gone after this long at most."),
                 5,180,5,()=>(float)s.SmokeMaxSeconds,v=>s.SmokeMaxSeconds=v,v=>v.ToString("0",text.Culture)+" s");
             section(p,L("ReconfAppearance","Appearance"));
+            slider(p,L("ReconfBrightness","Explosion brightness"),L("ReconfBrightnessHint","How bright and white-hot the fireball's flash is (1.00: VEFX's original, a dimmer, redder flash)."),
+                0.5f,2.5f,0.05f,()=>(float)s.Brightness,v=>s.Brightness=v,Times);
             slider(p,L("ReconfOpacity","Smoke opacity"),L("ReconfOpacityHint","Lower: more transparent smoke. 1.00: VEFX's original density."),
                 0.1f,2,0.05f,()=>(float)s.SmokeOpacity,v=>s.SmokeOpacity=v,Times);
             slider(p,L("ReconfEdgeGlow","Glow at the plume's edges"),L("ReconfEdgeGlowHint","How much the glow gathers at the top and outer edges of the rising plume, over a darker, smoky body. 0: VEFX's original glow."),
                 0,1,0.05f,()=>(float)s.EdgeGlow,v=>s.EdgeGlow=v,v=>(v*100).ToString("0",text.Culture)+" %");
             section(p,L("ReconfNuclear","Nuclear explosions"));
-            slider(p,L("ReconfNukeGlow","Nuclear glow time"),L("ReconfNukeGlowHint","How long a nuclear fireball and its rolling cloud glow."),
+            slider(p,L("ReconfNukeGlow","Nuclear glow time"),L("ReconfNukeGlowHint","How long a 20 kt nuclear fireball and its rolling cloud glow; bigger bombs glow longer (a megaton: about a minute)."),
                 2,60,1,()=>(float)s.NukeGlowSeconds,v=>s.NukeGlowSeconds=v,v=>v.ToString("0",text.Culture)+" s");
             slider(p,L("ReconfNukeHalfLife","Nuclear smoke half-life"),L("ReconfNukeHalfLifeHint","How often a nuclear cloud's opacity halves once its glow is gone."),
                 5,300,5,()=>(float)s.NukeSmokeHalfLife,v=>s.NukeSmokeHalfLife=v,v=>v.ToString("0",text.Culture)+" s");

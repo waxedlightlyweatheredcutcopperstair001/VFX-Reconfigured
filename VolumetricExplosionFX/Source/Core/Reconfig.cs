@@ -21,7 +21,20 @@ namespace VolumetricExplosionFX.Core
         static readonly FxSettings Defaults = new FxSettings();
 
         public static double Speed(FxPlan plan) => plan != null && plan.Warhead == WarheadKind.Nuke ? 1 : S.ExplosionSpeed;
-        public static double GlowSeconds(FxPlan plan) => plan != null && plan.Warhead == WarheadKind.Nuke ? S.NukeGlowSeconds : S.GlowSeconds;
+        /// <summary>
+        /// How long the gas glows (real seconds), by the explosion's size. Conventional: the setting is a medium explosion's
+        /// (a fireball about 12 m across), scaling with the fireball radius^0.6 (a small missile's flashes for about half a
+        /// second, a big one glows up to three times longer). Nuclear: the setting is a 20 kt bomb's, scaling with
+        /// yield^0.4 (Glasstone & Dolan: a 1 Mt fireball glows for about a minute).
+        /// </summary>
+        public static double GlowSeconds(FxPlan plan)
+        {
+            if (plan != null && plan.Warhead == WarheadKind.Nuke)
+                return S.NukeGlowSeconds * Numbers.Clamp(Math.Pow(Math.Max(plan.WarheadTnt / 1e6, 0.001) / 20, 0.4), 0.4, 5);
+            double radius = plan != null ? VolumeEvolution.FireballRadius(plan) : 12;
+            return S.GlowSeconds * Numbers.Clamp(Math.Pow(Math.Max(radius, 0.1) / 12, 0.6), 0.15, 3);
+        }
+        public static double Brightness => S.Brightness;
         public static double SmokeHalfLife(FxPlan plan) => plan != null && plan.Warhead == WarheadKind.Nuke ? S.NukeSmokeHalfLife : S.SmokeHalfLife;
         public static double SmokeOpacity => S.SmokeOpacity;
         public static double EdgeGlow => S.EdgeGlow;

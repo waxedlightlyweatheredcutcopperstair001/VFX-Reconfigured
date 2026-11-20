@@ -193,7 +193,7 @@ namespace VolumetricExplosionFX.Rendering
     // green, a monospaced system font, scan lines, [ ON ] switches, ##### sliders), Paper (cream, a serif system font, red
     // ink, ruled lines, check boxes, underlined choices), Mission (night blue and amber, condensed capitals, a grid, corner
     // brackets, lamp switches and segmented gauges).
-    internal enum UiStyle { Glass, Neon, Terminal, Paper, Mission }
+    internal enum UiStyle { Glass, Neon, Terminal, Paper, Mission, Simple }
     // 1.1: the settings window, VEFX's own design: a style, a layout (Open: tabs on top and open rows; Panel: a
     // sidebar of pages and grouped sections; Compact: a smaller window with icon tabs), see-through backgrounds and a size
     // the player sets. Animated: the window opens and closes with a fade and a slight zoom, the tab marker glides, pages
@@ -237,6 +237,12 @@ namespace VolumetricExplosionFX.Rendering
                         Border=C(0.5f,0.72f,0.95f,0.38f), Scroll=C(0.5f,0.72f,0.95f,0.35f), Pattern=C(0.5f,0.72f,0.95f,0.05f), Good=C(0.45f,0.8f,1), Warn=C(1,0.7f,0.18f), Bad=C(1,0.38f,0.32f),
                         Radius=0, Control=0, Upper=true, PatternKind=3,
                         Fonts=new[]{"Bahnschrift SemiCondensed","Bahnschrift","Arial Narrow","Avenir Next Condensed","Roboto Condensed"} };
+                    // VFX Reconfigured: 'Simple', the BDArmory Lite look: near-black panels, grey controls, white text, orange accents.
+                    case UiStyle.Simple: return new Theme { Style=style, Ink=C(0.902f,0.902f,0.902f), Soft=C(0.604f,0.627f,0.651f), Faint=C(0.420f,0.439f,0.463f),
+                        Accent=C(0.941f,0.639f,0.235f), Accent2=C(0.941f,0.639f,0.235f), OnAccent=C(0.106f,0.110f,0.122f), Body=C(0.106f,0.110f,0.122f,0.97f), Side=C(0.145f,0.153f,0.169f,0.98f),
+                        Group=C(0.145f,0.153f,0.169f,0.9f), Line=C(0.204f,0.212f,0.231f), Track=C(0.204f,0.216f,0.235f), Hover=C(0.251f,0.267f,0.290f,0.7f), Shadow=C(0,0,0,0.45f),
+                        Border=C(0.204f,0.212f,0.231f), Scroll=C(0.420f,0.439f,0.463f,0.6f), Good=C(0.941f,0.639f,0.235f), Warn=C(0.941f,0.639f,0.235f), Bad=C(0.898f,0.282f,0.302f),
+                        Radius=4, Control=3 };
                     default: return new Theme { Style=UiStyle.Glass, Ink=C(0.94f,0.95f,0.97f), Soft=C(0.64f,0.68f,0.73f), Faint=C(0.45f,0.49f,0.54f),
                         Accent=C(0.32f,0.86f,0.78f), Accent2=C(0.32f,0.86f,0.78f), OnAccent=C(0.03f,0.08f,0.08f), Body=C(0.06f,0.075f,0.09f,0.94f), Side=C(0.045f,0.055f,0.068f,0.96f),
                         Group=C(1,1,1,0.045f), Line=C(1,1,1,0.08f), Track=C(1,1,1,0.14f), Hover=C(1,1,1,0.06f), Shadow=C(0,0,0,0.55f),

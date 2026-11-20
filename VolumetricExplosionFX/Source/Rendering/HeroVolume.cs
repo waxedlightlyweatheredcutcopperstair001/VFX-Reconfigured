@@ -166,7 +166,7 @@ namespace VolumetricExplosionFX.Rendering
             properties.SetVector(Fire,V(fireball));properties.SetVector(Smoke,V(smoke));
             LookProfile look=VolumeEvolution.Look(plan);
             properties.SetVector(Look0,V(look.Shader0));properties.SetVector(Look1,V(look.Shader1));
-            properties.SetVector(Reconf,new Vector4((float)Reconfig.EdgeGlow,0,0,0));   // VFX Reconfigured: glow at the plume's top and edges
+            properties.SetVector(Reconf,new Vector4((float)Reconfig.EdgeGlow,(float)Reconfig.Brightness,0,0));   // VFX Reconfigured: glow at the plume's top and edges
             properties.SetVector(Shell,V(shell));properties.SetVector(Core,V(core));
             properties.SetVector(Cloud,V(cloud));properties.SetVector(Context,V(context));
             properties.SetVector(Bounds,V(VolumeEvolution.Bounds(State)));

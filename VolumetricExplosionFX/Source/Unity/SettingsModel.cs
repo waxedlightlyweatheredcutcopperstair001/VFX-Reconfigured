@@ -63,8 +63,8 @@ namespace VolumetricExplosionFX.Rendering
                 ()=>s.LookEditor,v=>s.LookEditor=v);
             // The window itself: its style, layout, opacity and size.
             Section(general,L("WindowSection","Window"));
-            general.Rows.Add(new UiRow { Kind=UiRowKind.Choice, Label=L("Style","Style"), Hint=L("StyleHint","Five complete looks for this window."),
-                Options=new[]{L("SkinGlass","Glass"),L("SkinNeon","Neon"),L("SkinTerminal","Terminal"),L("SkinPaper","Paper"),L("SkinMission","Mission")},
+            general.Rows.Add(new UiRow { Kind=UiRowKind.Choice, Label=L("Style","Style"), Hint=L("StyleHint","Six complete looks for this window."),
+                Options=new[]{L("SkinGlass","Glass"),L("SkinNeon","Neon"),L("SkinTerminal","Terminal"),L("SkinPaper","Paper"),L("SkinMission","Mission"),L("SkinSimple","Simple")},
                 GetChoice=()=>s.UiStyle, SetChoice=i=>s.UiStyle=i });
             general.Rows.Add(new UiRow { Kind=UiRowKind.Choice, Label=L("Layout","Layout"),
                 Hint=L("LayoutHint","Open: tabs on top. Panel: a sidebar of pages. Compact: a smaller window."),
