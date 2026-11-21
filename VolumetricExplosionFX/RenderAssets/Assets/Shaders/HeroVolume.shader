@@ -139,8 +139,19 @@ Shader "VolumetricExplosionFX/HeroVolume"
             float3 Glow(float t) { return -log(1-min(FlameColour(saturate(t)),0.985)); }
             // VFX Reconfigured: aerial perspective (C#: AerialPerspective): rgb x transmittance + sky x (1 - transmittance),
             // premultiplied. _AerialT.w = 0: not set (no change).
-            float4 _AerialT, _AerialIn;
-            float4 Aerial(float4 c) { return _AerialT.w>0.5?float4(c.rgb*_AerialT.rgb+_AerialIn.rgb*c.a*(1-_AerialT.rgb),c.a):c; }
+            // By height: _AerialT/_AerialIn at the volume's bottom, _AerialT2/_AerialIn2 at its top (world points
+            // _AerialBottom, _AerialTop), blended where the pixel's view passes the volume.
+            float4 _AerialT, _AerialIn, _AerialT2, _AerialIn2, _AerialBottom, _AerialTop;
+            float4 Aerial(float4 c,float3 world)
+            {
+                if(_AerialT.w<0.5) return c;
+                float3 dir=normalize(world-_WorldSpaceCameraPos), span=_AerialTop.xyz-_AerialBottom.xyz;
+                float3 centre=0.5*(_AerialTop.xyz+_AerialBottom.xyz);
+                float3 p=_WorldSpaceCameraPos+dir*max(dot(centre-_WorldSpaceCameraPos,dir),0);
+                float k=_AerialT2.w>0.5?saturate(dot(p-_AerialBottom.xyz,span)/max(dot(span,span),1e-4)):0;
+                float3 T=lerp(_AerialT.rgb,_AerialT2.rgb,k), In=lerp(_AerialIn.rgb,_AerialIn2.rgb,k);
+                return float4(c.rgb*T+In*c.a*(1-T),c.a);
+            }
             // VFX Reconfigured: explosion brightness (_Reconf.y, 1 = VEFX's): brighter and whiter-hot flames (a dim, red blast
             // reads as weak). 0 (not set): unchanged.
             float Bright() { return _Reconf.y>0.001?_Reconf.y:1; }
@@ -1173,7 +1184,7 @@ Shader "VolumetricExplosionFX/HeroVolume"
                 if(pend0) acc=Over(acc,ShellCrossing(o+d*t0,rsl,path,dn,soft0));
                 if(pendc) { float4 core=CoreLayer(cb2,cp,coreVisible); emis+=(1-acc.a)*core.rgb; acc.a+=(1-acc.a)*core.a; }
                 if(pend1) acc=Over(acc,ShellCrossing(o+d*t1,rsl,path,dn,soft1));
-                return Aerial(float4(acc.rgb+Expose(emis),acc.a));
+                return Aerial(float4(acc.rgb+Expose(emis),acc.a),i.world);
             }
             #ifdef VEFX_SIM
             // 1.1: the colour, and in a second target the eye depth of the cloud's opaque front weighted by its coverage

@@ -55,9 +55,8 @@ namespace VolumetricExplosionFX.Rendering
             float ambient=Mathf.Clamp(RenderSettings.ambientLight.grayscale,0.12f,0.6f);
             SplashProperties.Apply(block,frame,light,ambient,sun,glow,glowLocal-Vector3.up*sea,Mathf.Clamp(stepScale,0.4f,1),
                 (float)Numbers.Clamp(plan.Atmosphere,0,1));
-            Vector4 aerialT, aerialIn;   // VFX Reconfigured: aerial perspective
-            VFXReconfigured.AerialPerspective.Compute(transform.position,out aerialT,out aerialIn);
-            block.SetVector("_AerialT",aerialT); block.SetVector("_AerialIn",aerialIn);
+            float half=transform.lossyScale.y;   // VFX Reconfigured: aerial perspective, by height
+            VFXReconfigured.AerialPerspective.Apply(block,transform.position-transform.up*half,transform.position+transform.up*half);
             renderer.SetPropertyBlock(block);
         }
         internal void Show(Camera cam,LowResVolumes lowRes)

@@ -16,7 +16,7 @@ namespace VolumetricExplosionFX.Rendering
             SunColor=Shader.PropertyToID("_SunColor"),Flare=Shader.PropertyToID("_Flare"),
             Fire=Shader.PropertyToID("_Fire"),Smoke=Shader.PropertyToID("_Smoke"),Bounds=Shader.PropertyToID("_Bounds"),Motion=Shader.PropertyToID("_Motion"),Dust=Shader.PropertyToID("_Dust"),
             Shock=Shader.PropertyToID("_Shock"),ShockGain=Shader.PropertyToID("_ShockGain"),RingDepth=Shader.PropertyToID("_RingDepth"),Haze=Shader.PropertyToID("_Haze"),Seed=Shader.PropertyToID("_Seed"),
-            Look0=Shader.PropertyToID("_Look0"),Look1=Shader.PropertyToID("_Look1"),Reconf=Shader.PropertyToID("_Reconf"),AerialTId=Shader.PropertyToID("_AerialT"),AerialInId=Shader.PropertyToID("_AerialIn"),SimShape=Shader.PropertyToID("_SimShape"),SimVariant=Shader.PropertyToID("_SimVariant"),SimLinger=Shader.PropertyToID("_SimLinger"),SimStem=Shader.PropertyToID("_SimStem"),SmokeMix=Shader.PropertyToID("_SmokeMix"),
+            Look0=Shader.PropertyToID("_Look0"),Look1=Shader.PropertyToID("_Look1"),Reconf=Shader.PropertyToID("_Reconf"),SimShape=Shader.PropertyToID("_SimShape"),SimVariant=Shader.PropertyToID("_SimVariant"),SimLinger=Shader.PropertyToID("_SimLinger"),SimStem=Shader.PropertyToID("_SimStem"),SmokeMix=Shader.PropertyToID("_SmokeMix"),
             NukeId=Shader.PropertyToID("_Nuke"),NukeStemId=Shader.PropertyToID("_NukeStem"),NukeRingId=Shader.PropertyToID("_NukeRing"),
             NukeGroundId=Shader.PropertyToID("_NukeGround"),NukeIceId=Shader.PropertyToID("_NukeIce"),NukeWilsonId=Shader.PropertyToID("_NukeWilson"),NukeCapId=Shader.PropertyToID("_NukeCap"),
             NkBall=Shader.PropertyToID("_NkBall"),NkTorus=Shader.PropertyToID("_NkTorus"),NkStem=Shader.PropertyToID("_NkStem"),NkSkirt=Shader.PropertyToID("_NkSkirt"),
@@ -168,9 +168,8 @@ namespace VolumetricExplosionFX.Rendering
             properties.SetVector(Look0,V(look.Shader0));properties.SetVector(Look1,V(look.Shader1));
             properties.SetVector(Reconf,new Vector4((float)Reconfig.EdgeGlow,(float)Reconfig.Brightness,0,0));   // VFX Reconfigured: glow at the plume's top and edges
             // VFX Reconfigured: the air between the camera and the explosion veils it (AerialPerspective).
-            Vector4 aerialT, aerialIn;
-            VFXReconfigured.AerialPerspective.Compute(transform.position,out aerialT,out aerialIn);
-            properties.SetVector(AerialTId,aerialT); properties.SetVector(AerialInId,aerialIn);
+            float half=(float)State.BoxRadius;
+            VFXReconfigured.AerialPerspective.Apply(properties,transform.position-transform.up*half,transform.position+transform.up*half);
             properties.SetVector(Shell,V(shell));properties.SetVector(Core,V(core));
             properties.SetVector(Cloud,V(cloud));properties.SetVector(Context,V(context));
             properties.SetVector(Bounds,V(VolumeEvolution.Bounds(State)));

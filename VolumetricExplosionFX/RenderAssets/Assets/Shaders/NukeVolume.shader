@@ -48,8 +48,19 @@ Shader "VolumetricExplosionFX/NukeVolume"
             #include "UnityCG.cginc"
             // VFX Reconfigured: aerial perspective (C#: AerialPerspective): rgb x transmittance + sky x (1 - transmittance),
             // premultiplied. _AerialT.w = 0: not set (no change).
-            float4 _AerialT, _AerialIn;
-            float4 Aerial(float4 c) { return _AerialT.w>0.5?float4(c.rgb*_AerialT.rgb+_AerialIn.rgb*c.a*(1-_AerialT.rgb),c.a):c; }
+            // By height: _AerialT/_AerialIn at the volume's bottom, _AerialT2/_AerialIn2 at its top (world points
+            // _AerialBottom, _AerialTop), blended where the pixel's view passes the volume.
+            float4 _AerialT, _AerialIn, _AerialT2, _AerialIn2, _AerialBottom, _AerialTop;
+            float4 Aerial(float4 c,float3 world)
+            {
+                if(_AerialT.w<0.5) return c;
+                float3 dir=normalize(world-_WorldSpaceCameraPos), span=_AerialTop.xyz-_AerialBottom.xyz;
+                float3 centre=0.5*(_AerialTop.xyz+_AerialBottom.xyz);
+                float3 p=_WorldSpaceCameraPos+dir*max(dot(centre-_WorldSpaceCameraPos,dir),0);
+                float k=_AerialT2.w>0.5?saturate(dot(p-_AerialBottom.xyz,span)/max(dot(span,span),1e-4)):0;
+                float3 T=lerp(_AerialT.rgb,_AerialT2.rgb,k), In=lerp(_AerialIn.rgb,_AerialIn2.rgb,k);
+                return float4(c.rgb*T+In*c.a*(1-T),c.a);
+            }
             #include "VolumeDepth.cginc"
             UNITY_DECLARE_DEPTH_TEXTURE(_CameraDepthTexture);
             sampler3D _NoiseTex;
@@ -573,7 +584,7 @@ Shader "VolumetricExplosionFX/NukeVolume"
                 float4 res=float4(rgb,a);
                 float tc=front>0?front:exit;
                 if(wall.a>0) res=tw<tc?wall+(1-wall.a)*res:res+(1-res.a)*wall;
-                fo.colour=Aerial(res);   // VFX Reconfigured: aerial perspective
+                fo.colour=Aerial(res,i.world);   // VFX Reconfigured: aerial perspective
                 float eye=front>0?front*rayEye:0;
                 fo.front=float4(eye*res.a,0,0,eye>0?res.a:0);
                 return fo;

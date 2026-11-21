@@ -85,6 +85,26 @@ namespace VFXReconfigured
             catch (Exception) { transmittance = new Vector4(1, 1, 1, 0); inscatter = Vector4.zero; return false; }
         }
 
+        static readonly int TId = Shader.PropertyToID("_AerialT"), InId = Shader.PropertyToID("_AerialIn"),
+            T2Id = Shader.PropertyToID("_AerialT2"), In2Id = Shader.PropertyToID("_AerialIn2"),
+            BottomId = Shader.PropertyToID("_AerialBottom"), TopId = Shader.PropertyToID("_AerialTop");
+
+        /// <summary>
+        /// Sets a volume's aerial perspective at its bottom and its top (world points): the shaders blend between them by
+        /// the height where each pixel's view passes the volume, so a cloud reaching into thin air is hazed less at its top.
+        /// </summary>
+        public static void Apply(MaterialPropertyBlock block, Vector3 bottom, Vector3 top)
+        {
+            if (block == null) return;
+            Compute(bottom, out Vector4 t, out Vector4 i);
+            bool upper = Compute(top, out Vector4 t2, out Vector4 i2) || t.w > 0.5f;
+            if (t.w < 0.5f && upper) { t = new Vector4(1, 1, 1, 1); i = i2; }   // (bottom too close to haze: the top may still be)
+            if (t2.w < 0.5f) { t2 = new Vector4(1, 1, 1, 1); i2 = i; }
+            t2.w = t.w > 0.5f ? 1 : 0;
+            block.SetVector(TId, t); block.SetVector(InId, i); block.SetVector(T2Id, t2); block.SetVector(In2Id, i2);
+            block.SetVector(BottomId, bottom); block.SetVector(TopId, top);
+        }
+
         static double Density(CelestialBody body, double altitude)
         {
             double pressure = body.GetPressure(altitude);
