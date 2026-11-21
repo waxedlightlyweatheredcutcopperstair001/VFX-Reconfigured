@@ -352,12 +352,21 @@ Shader "VolumetricExplosionFX/NukeVolume"
             float HGn(float g,float c) { return (1-g*g)/pow(max(1+g*g-2*g*c,1e-4),1.5); }   // 1 = isotropic
             float Phase(float g,float c) { return 0.72*HGn(g,c)+0.28*HGn(-0.25*g/0.6,c); }
             // Incandescence: deep red, orange, yellow, white with temperature (0..1).
+            // VFX Reconfigured: _Reconf.z = 1 for an antimatter blast: its glowing air is ionised nitrogen, violet-blue, round a
+            // white-hot core (not the red-orange of a nuclear fireball).
+            float4 _Reconf;
+            float3 Antimatter(float3 c,float t)
+            {
+                float lum=dot(c,float3(0.3,0.5,0.2));
+                return lerp(c,min(lum*lerp(float3(0.75,0.6,1.3),float3(0.95,0.93,1.05),saturate(t*1.6-0.6)),1),0.9);
+            }
             float3 BlackBody(float t)
             {
                 float3 c=lerp(float3(0.35,0.03,0),float3(1,0.22,0.02),saturate(t*4));
                 c=lerp(c,float3(1,0.5,0.1),saturate(t*4-1));
                 c=lerp(c,float3(1,0.78,0.38),saturate(t*4-2));
-                return lerp(c,float3(1,0.95,0.88),saturate(t*4-3));
+                c=lerp(c,float3(1,0.95,0.88),saturate(t*4-3));
+                return _Reconf.z>0.5?Antimatter(c,t):c;
             }
             float3 Expose(float3 e) { return 1-exp(-e); }
             // The blast wave racing over the ground: the wall of dust it raises at its foot, tallest at the front and

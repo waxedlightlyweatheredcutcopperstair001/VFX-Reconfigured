@@ -136,7 +136,14 @@ Shader "VolumetricExplosionFX/HeroVolume"
                 return lerp(c,float3(1,0.96,0.86),_Motion.y*saturate(t*2.5-1.4));
                 #endif
             }
-            float3 Glow(float t) { return -log(1-min(FlameColour(saturate(t)),0.985)); }
+            // (VFX Reconfigured: _Reconf.z = 1, antimatter: violet-blue ionised air round a white-hot core.)
+            float3 FlameTint(float3 c,float t)
+            {
+                if(_Reconf.z<0.5) return c;
+                float lum=dot(c,float3(0.3,0.5,0.2));
+                return lerp(c,min(lum*lerp(float3(0.75,0.6,1.3),float3(0.95,0.93,1.05),saturate(t*1.6-0.6)),0.985),0.9);
+            }
+            float3 Glow(float t) { return -log(1-min(FlameTint(FlameColour(saturate(t)),saturate(t)),0.985)); }
             // VFX Reconfigured: aerial perspective (C#: AerialPerspective): rgb x transmittance + sky x (1 - transmittance),
             // premultiplied. _AerialT.w = 0: not set (no change).
             // By height: _AerialT/_AerialIn at the volume's bottom, _AerialT2/_AerialIn2 at its top (world points

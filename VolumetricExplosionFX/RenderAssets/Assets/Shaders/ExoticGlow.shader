@@ -43,8 +43,9 @@ Shader "VolumetricExplosionFX/ExoticGlow"
                 o.eye=float2(dist,size/max(_ExGlow.x,1e-3));
                 return o;
             }
-            // erf, close enough for a soft edge.
-            float Erf(float x) { return tanh(1.2027*x+0.0918*x*x*x); }
+            // erf, close enough for a soft edge. (Clamped: against the sky the scene's depth is the far plane, hundreds of
+            // kilometres, and tanh of that overflowed to NaN: the glow's quad drew as a black square.)
+            float Erf(float x) { x=clamp(x,-3,3); return tanh(1.2027*x+0.0918*x*x*x); }
             float4 frag(v2f i):SV_Target
             {
                 float R=max(_ExGlow.x*i.eye.y,1e-3), sigma=0.45*R;
@@ -56,7 +57,7 @@ Shader "VolumetricExplosionFX/ExoticGlow"
                 float sc=max(sigma*_ExGlow.z,1e-3);
                 float core=exp(-b2/(sc*sc));
                 float3 c=(_ExEdge.rgb*glow+_ExCore.rgb*core*2)*_ExGlow.y*column;
-                return float4(c,0);
+                return float4(max(c,0),0);
             }
             ENDCG
         }

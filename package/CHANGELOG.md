@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.1
+- Fix: a large black square at an antimatter blast and at the start and end of a Graviolium lens. The glow's soft
+  edge overflowed against the sky (its depth is the far plane) and drew NaN, as black, over the glow's whole quad.
+- Antimatter's fireball and cloud glow violet-blue round a white-hot core instead of a nuclear fireball's red-orange.
+
 ## 0.4.0
 - Exotic fuel explosions (setting: Explosion look > Exotic fuel explosions), for any part holding the fuel; nothing
   changes without the mods that add it.
