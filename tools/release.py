@@ -10,8 +10,8 @@ Usage (Windows: "py tools\\release.py ..."):
     release.py --yes            don't ask for confirmation
 
 It checks first that:
-  - the working tree is clean and HEAD is the commit tagged vX.Y.Z, where X.Y.Z is the version in src/AssemblyInfo.cs,
-    and the tag is on GitHub;
+  - the working tree is clean and HEAD is the commit tagged vX.Y.Z (X.Y.Z: the version in src/AssemblyInfo.cs), or a
+    later one that only changes this script or the repo README, and the tag is on GitHub;
   - the zip holds the Windows explosion shader bundle;
   - there's no release for that tag yet.
 The release notes are that version's section of package/CHANGELOG.md.
@@ -25,6 +25,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 NAME = 'VolumetricFXReconfigured'
 REPO = 'waxedlightlyweatheredcutcopperstair001/VFX-Reconfigured'
+UNSHIPPED = {'tools/release.py', 'README.md'}   # changes after a tag that don't change the released mod
 
 
 def out(args):
@@ -70,7 +71,12 @@ def main():
     if code != 0:
         fail(f'there is no tag {tag} (the version in src/AssemblyInfo.cs) here: git pull --tags, or tag this version first')
     if tagged != head:
-        fail(f'HEAD is not the commit tagged {tag}: git checkout {tag} (or git pull) and run again')
+        # Commits after the tag are fine if they change nothing that is shipped (this script, the repo's README).
+        code, changed, _ = out(['git', 'diff', '--name-only', tag, 'HEAD'])
+        shipped = [f for f in changed.splitlines() if f and f not in UNSHIPPED]
+        if code != 0 or out(['git', 'merge-base', '--is-ancestor', tag, 'HEAD'])[0] != 0 or shipped:
+            fail(f'HEAD is not version {tag}: files changed since the tag: {", ".join(shipped) or "?"}. '
+                 f'Tag the new version first, or check out {tag}.')
     if not out(['git', 'ls-remote', '--tags', 'origin', 'refs/tags/' + tag])[1]:
         fail(f'tag {tag} is not on GitHub: git push origin {tag}')
     if out([gh, 'release', 'view', tag, '-R', REPO])[0] == 0:
