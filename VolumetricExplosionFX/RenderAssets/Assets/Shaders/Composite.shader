@@ -24,10 +24,17 @@ Shader "VolumetricExplosionFX/Composite"
             // 1 where the whole layer lies between the eye and the point (eye above its top and point under its base, or the
             // reverse): any cloud on that pixel is then in front. (where a cloud could also be behind, nothing is
             // hidden: a layer only overlapping the way hid explosions in front of clouds behind them.)
-            float Between(float ha,float hb,float2 band)
+            // VFX Reconfigured: a point inside the band is hidden in part, by how deep in it it lies (seen from above: the cloud
+            // seen is mostly the deck below the band's top; innerTop, the lowest top of the merged layers, is where most of
+            // it is. Seen from below: the cloud base, flat, within a kilometre above the band's bottom). A thick band (a
+            // cumulus deck with cumulonimbus to 11 km) otherwise hid nothing of a nuclear stem standing in it.
+            float4 _VefxCloudTops;
+            float Between(float ha,float hb,float2 band,float innerTop)
             {
                 if(band.y<=band.x) return 0;
-                float up=saturate((ha-band.y)/150)*saturate((band.x-hb)/150), down=saturate((band.x-ha)/150)*saturate((hb-band.y)/150);
+                float it=innerTop>band.x?innerTop:band.y;
+                float deep=0.5*saturate((band.y-hb)/(band.y-band.x))+0.5*saturate((it-hb)/max(it-band.x,1));
+                float up=saturate((ha-band.y)/150)*deep, down=saturate((band.x-ha)/150)*saturate((hb-band.x)/1000);
                 return max(up,down);
             }
             float CloudCover(float2 uv)
@@ -44,7 +51,7 @@ Shader "VolumetricExplosionFX/Composite"
                 float3 ray=lerp(lerp(_VefxFrustum[0].xyz,_VefxFrustum[3].xyz,uv.x),lerp(_VefxFrustum[1].xyz,_VefxFrustum[2].xyz,uv.x),uv.y);
                 float3 p=_VefxEye.xyz+ray*eye;
                 float ha=length(_VefxEye.xyz-_VefxPlanet.xyz)-_VefxPlanet.w, hb=length(p-_VefxPlanet.xyz)-_VefxPlanet.w;
-                float between=max(Between(ha,hb,_VefxCloudBands.xy),Between(ha,hb,_VefxCloudBands.zw));
+                float between=max(Between(ha,hb,_VefxCloudBands.xy,_VefxCloudTops.x),Between(ha,hb,_VefxCloudBands.zw,_VefxCloudTops.y));
                 if(between<=0) return 0;
                 // How much the clouds covered this pixel (the overlay queue's change: a cloud over the land or the sky
                 // changes it a lot).

@@ -11,7 +11,10 @@ namespace VolumetricExplosionFX.Ksp
     internal static class CloudLayers
     {
         internal static bool Known { get; private set; }
-        internal static Vector4 Bands { get; private set; }   // lowest layer's lowest and highest altitude (m), then the next one's
+        internal static Vector4 Bands { get; private set; }
+        // VFX Reconfigured: the lowest top among the layers merged into each band (x: first band, y: the rest): where most
+        // of a band's cloud is (a cumulus deck under sparse, taller cumulonimbus), for the partial hiding inside a band.
+        internal static Vector2 InnerTops { get; private set; }   // lowest layer's lowest and highest altitude (m), then the next one's
         static Type cloudsObject; static FieldInfo bodyField, layerField; static PropertyInfo inner, outer, planet;
         static bool searched, failed; static float nextScan; static string scannedBody, logged;
         internal static void Refresh(CelestialBody body)
@@ -40,22 +43,28 @@ namespace VolumetricExplosionFX.Ksp
                 }
                 // Layers that touch are one; two bands at most: the lowest, and everything above it (the cumulonimbus tops).
                 layers.Sort((x,y)=>x.x.CompareTo(y.x));
-                var merged=new System.Collections.Generic.List<Vector2>();
+                var merged=new System.Collections.Generic.List<Vector2>(); var tops=new System.Collections.Generic.List<float>();
                 foreach(Vector2 l in layers)
                 {
-                    if(merged.Count>0&&l.x<=merged[merged.Count-1].y+300) merged[merged.Count-1]=new Vector2(merged[merged.Count-1].x,Mathf.Max(merged[merged.Count-1].y,l.y));
-                    else merged.Add(l);
+                    if(merged.Count>0&&l.x<=merged[merged.Count-1].y+300)
+                    {
+                        merged[merged.Count-1]=new Vector2(merged[merged.Count-1].x,Mathf.Max(merged[merged.Count-1].y,l.y));
+                        tops[tops.Count-1]=Mathf.Min(tops[tops.Count-1],l.y);
+                    }
+                    else { merged.Add(l); tops.Add(l.y); }
                 }
                 Known=merged.Count>0;
                 float lo0=Known?merged[0].x:0, hi0=Known?merged[0].y:0, lo1=float.MaxValue, hi1=0;
                 for(int i=1;i<merged.Count;i++) { lo1=Mathf.Min(lo1,merged[i].x); hi1=Mathf.Max(hi1,merged[i].y); }
+                float top1=float.MaxValue; for(int i=1;i<tops.Count;i++) top1=Mathf.Min(top1,tops[i]);
+                InnerTops=Known?new Vector2(tops[0],top1<float.MaxValue?top1:0):Vector2.zero;
                 Bands=Known?new Vector4(lo0,hi0,lo1<float.MaxValue?lo1:0,lo1<float.MaxValue?hi1:0):Vector4.zero;
                 string text=Known?body.bodyName+" "+lo0.ToString("0")+"-"+hi0.ToString("0")+" m"+(lo1<float.MaxValue?", "+lo1.ToString("0")+"-"+hi1.ToString("0")+" m":""):null;
                 if(text==null&&skipped>0) text=body.bodyName+" none used";
                 if(text!=null) text+=skipped>0?" ("+skipped+" ground-level or very tall layer(s) not used)":"";
                 if(text==null) text=body.bodyName+" none found ("+objects.Length+" EVE cloud object(s) in the scene)";
                 text+="; every layer: "+(all.Length>0?all:"none");
-                if(text!=null&&text!=logged) { logged=text; Debug.Log("[VEFX] Cloud layers (EVE): "+text+": explosions are hidden behind a layer lying wholly between the eye and them"); }
+                if(text!=null&&text!=logged) { logged=text; Debug.Log("[VEFX] Cloud layers (EVE): "+text+": explosions are hidden behind these layers (and partly within them)"); }
             }
             catch(Exception ex)
             {

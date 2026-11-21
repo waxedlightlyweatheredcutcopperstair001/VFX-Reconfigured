@@ -25,9 +25,9 @@ namespace VolumetricExplosionFX.Rendering
         // transparent pass: against the image before the whole pass, the atmosphere's haze and our own glare counted as
         // clouds and the explosions faded over the land.)
         static readonly int AfterId=Shader.PropertyToID("_VefxAfterAlpha"),
-            CloudOccId=Shader.PropertyToID("_VefxCloudOcc"), CloudBandsId=Shader.PropertyToID("_VefxCloudBands"),
+            CloudOccId=Shader.PropertyToID("_VefxCloudOcc"), CloudBandsId=Shader.PropertyToID("_VefxCloudBands"), CloudTopsId=Shader.PropertyToID("_VefxCloudTops"),
             PlanetId=Shader.PropertyToID("_VefxPlanet"), EyeId=Shader.PropertyToID("_VefxEye"), FrustumId=Shader.PropertyToID("_VefxFrustum");
-        internal bool CloudOcclusion; internal Vector4 CloudBands, Planet;   // two layers' lowest and highest altitudes (m); planet centre and radius
+        internal bool CloudOcclusion; internal Vector4 CloudBands, Planet; internal Vector2 CloudTops;   // two layers' lowest and highest altitudes (m); planet centre and radius
         readonly Vector3[] corners=new Vector3[4]; Matrix4x4 frustum;
         internal Material ProbeMaterial;   // VolumetricExplosionFX/CloudProbe (none: no hiding behind clouds)
         GameObject probe; Mesh probeMesh; Renderer probeRenderer;
@@ -181,7 +181,7 @@ namespace VolumetricExplosionFX.Rendering
                     // (full size, as the probe's grab: at another size the land's fine detail differed and read as cloud)
                     after.GetTemporaryRT(AfterId,-1,-1,0,FilterMode.Bilinear,RenderTextureFormat.ARGBHalf);
                     after.Blit(BuiltinRenderTextureType.CameraTarget,AfterId);
-                    after.SetGlobalVector(CloudBandsId,CloudBands); after.SetGlobalVector(PlanetId,Planet);
+                    after.SetGlobalVector(CloudBandsId,CloudBands); after.SetGlobalVector(CloudTopsId,CloudTops); after.SetGlobalVector(PlanetId,Planet);
                     after.SetGlobalVector(EyeId,eye); after.SetGlobalMatrix(FrustumId,frustum);
                 }
                 after.SetGlobalFloat(CloudOccId,occlude?1:0);

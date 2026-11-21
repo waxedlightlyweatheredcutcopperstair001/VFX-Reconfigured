@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.3
+- Explosions inside a cloud layer are now hidden by it in part, by how deep in the layer they are: seen from above, a
+  nuclear stem standing in the cloud deck disappears into it while the cap above shows. Before, only an explosion
+  wholly below (or above) the whole layer was hidden, and EVE's Kerbin layers merge into one band from 1.75 to 11.5 km,
+  so nothing in that band was ever hidden. Needs the shader bundle rebuilt (tools/make.py does it).
+
 ## 0.3.2
 - Cloud diagnostics: KSP.log now says whether EVE's cloud layers were found (and why not), every layer's altitudes,
   the cloud materials' render queues, and when the video memory saver turns off hiding explosions behind clouds.

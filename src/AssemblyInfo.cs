@@ -7,6 +7,6 @@ using System.Reflection;
 [assembly: AssemblyCompany("VFX Reconfigured contributors; based on VEFX and VGFX by Warnix")]
 [assembly: AssemblyCopyright("MIT")]
 [assembly: AssemblyVersion("0.3.0.0")]
-[assembly: AssemblyFileVersion("0.3.2.0")]
-[assembly: AssemblyInformationalVersion("0.3.2")]
+[assembly: AssemblyFileVersion("0.3.3.0")]
+[assembly: AssemblyInformationalVersion("0.3.3")]
 [assembly: KSPAssembly("VolumetricFXReconfigured", 0, 3)]

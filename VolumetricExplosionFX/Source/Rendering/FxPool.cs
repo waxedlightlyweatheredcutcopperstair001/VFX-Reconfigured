@@ -90,7 +90,7 @@ namespace VolumetricExplosionFX.Rendering
                 CloudLayers.Refresh(body);
                 lowRes.CloudOcclusion=CloudLayers.Known&&body!=null&&settings.Volumetric&&!saver;
                 if(CloudLayers.Known&&saver&&!saverCloudLogged) { saverCloudLogged=true; Debug.Log("[VFXR] Video memory saver on: explosions are not hidden behind EVE's clouds"); }
-                if(lowRes.CloudOcclusion) { Vector3 c=body.position; lowRes.CloudBands=CloudLayers.Bands; lowRes.Planet=new Vector4(c.x,c.y,c.z,(float)body.Radius); }
+                if(lowRes.CloudOcclusion) { Vector3 c=body.position; lowRes.CloudBands=CloudLayers.Bands; lowRes.CloudTops=CloudLayers.InnerTops; lowRes.Planet=new Vector4(c.x,c.y,c.z,(float)body.Radius); }
                 lowRes.ShowProbe(cam,lowRes.CloudOcclusion);
                 int divisor=saver?Math.Max(settings.VolumeDivisor,2):settings.VolumeDivisor;
                 lowRes.Begin(cam,VolumeEvolution.MarchDivisor(divisor,sim)); begun=true; // also empties this camera's buffer at full resolution
