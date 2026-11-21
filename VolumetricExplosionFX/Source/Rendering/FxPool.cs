@@ -113,7 +113,8 @@ namespace VolumetricExplosionFX.Rendering
             float distance=Vector3.Distance(cam.transform.position,position);
             Vector3 origin=position+SnapshotReader.Vector(c.Representative.Origin-c.Representative.Part.Position);
             // (A nuclear blast only joins another nuclear one: it was swallowed here by a missile's own explosion.)
-            if(Absorb(position,origin,plan.VisualEnergyScore,plan.Warhead!=WarheadKind.None,plan.Warhead==WarheadKind.Nuke)) { Absorbed++; return true; }
+            // (VFX Reconfigured: an exotic fuel's or a battery's own effect is never swallowed by a nearby fireball.)
+            if(plan.Exotic==ExoticKind.None&&plan.Sparks==null&&Absorb(position,origin,plan.VisualEnergyScore,plan.Warhead!=WarheadKind.None,plan.Warhead==WarheadKind.Nuke)) { Absorbed++; return true; }
             double lod=Numbers.Clamp(1-distance/reach,0.1,1);
             plan.DebrisCount=(int)(plan.DebrisCount*lod); plan.PuffCount=Math.Max(4,(int)(plan.PuffCount*lod));
             // 1.1: a fresh blast is worth more than an old one's lingering smoke; what is on screen more than what is not.

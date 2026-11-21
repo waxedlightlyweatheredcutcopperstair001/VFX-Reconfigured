@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.1
+- Spark jets you can actually see: battery and lithium sparks were 3-7 cm dots with ~20 cm streaks (a pixel at most from
+  a normal camera distance) and shared the 256-particle ember pool. They now have their own system (up to 1,500), are
+  drawn as long motion-blurred streaks that stay visible from afar, white-hot cooling to orange-red, falling and
+  bouncing off the ground, and come much denser (a battery jet: 150-600 sparks a second at 14-30 m/s, with flame along
+  the jet).
+- A battery or an exotic fuel tank keeps its own effect: next to an exploding tank it was merged into that fireball,
+  and its sparks (or glow, or lens) never appeared.
+
 ## 0.5.0
 - More exotic fuel explosions (Explosion look > Exotic fuel explosions), for any part holding them:
   - Lithium (Near Future Propulsion): a white-crimson metal fire. A white flash, then a flickering glare that lights the

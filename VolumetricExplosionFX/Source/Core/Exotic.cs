@@ -182,7 +182,7 @@ namespace VolumetricExplosionFX.Core
         {
             double l=Log(kg/10);
             return new SparkSpec { Jets=0, Start=0.05, Seconds=LithiumBurnSeconds(kg),
-                Rate=Numbers.Clamp(25+15*l,25,110), Speed=Numbers.Clamp(3+2*l,3,9), Spread=1, Size=Numbers.Clamp(0.05+0.02*l,0.05,0.14), Life=1.2,
+                Rate=Numbers.Clamp(60+40*l,60,300), Speed=Numbers.Clamp(4+2*l,4,10), Spread=1, Size=Numbers.Clamp(0.08+0.03*l,0.08,0.18), Life=1.4,
                 Hot=new Vec3(1,0.95,0.95), Cool=new Vec3(1,0.3,0.4),
                 FlameRate=10, FlameSize=Numbers.Clamp(0.6+0.5*l,0.6,3), Flame=new Vec3(1,0.45,0.55),
                 SmokeRate=5, SmokeSize=Numbers.Clamp(1.5+l,1.5,6), SmokeAlpha=0.5, Smoke=new Vec3(0.95,0.95,0.96) };
@@ -196,9 +196,9 @@ namespace VolumetricExplosionFX.Core
             if(ec<20) return null;
             double l=Log(ec/100);
             return new SparkSpec { Jets=(int)Numbers.Clamp(1+Math.Floor(Log(ec/250)*1.2),1,4), Start=0.15, Seconds=Numbers.Clamp(1.2+1.6*Log(ec/200),1.2,7),
-                Rate=Numbers.Clamp(40+25*l,40,140), Speed=Numbers.Clamp(10+4*l,10,22), Spread=0.18, Size=Numbers.Clamp(0.03+0.01*l,0.03,0.07), Life=0.6,
+                Rate=Numbers.Clamp(150+120*l,150,600), Speed=Numbers.Clamp(14+5*l,14,30), Spread=0.25, Size=Numbers.Clamp(0.06+0.02*l,0.06,0.12), Life=0.9,
                 Hot=new Vec3(1,0.95,0.8), Cool=new Vec3(1,0.6,0.2),
-                FlameRate=12, FlameSize=Numbers.Clamp(0.3+0.15*l,0.3,0.9), Flame=new Vec3(1,0.55,0.18),
+                FlameRate=25, FlameSize=Numbers.Clamp(0.3+0.15*l,0.3,0.9), Flame=new Vec3(1,0.55,0.18),
                 SmokeRate=4, SmokeSize=Numbers.Clamp(0.8+0.4*l,0.8,2), SmokeAlpha=0.35, Smoke=new Vec3(0.78,0.78,0.8), PopFlash=Numbers.Clamp(0.5+0.2*l,0.5,1.2) };
         }
 

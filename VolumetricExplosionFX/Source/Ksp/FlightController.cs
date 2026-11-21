@@ -220,12 +220,15 @@ namespace VolumetricExplosionFX.Ksp
                     armed=true; exoticParts++;
                     if(log!=null) log.WriteLine("Exotic: "+exotic.Kind+" "+exotic.Units.ToString("0.###",System.Globalization.CultureInfo.InvariantCulture)+" units in "+s.Name);
                 }
+                // A part that vents sparks (a battery) keeps its own effect too: merged into a nearby fireball, it had none.
+                bool own=exotic.Kind!=ExoticKind.None||plan.Sparks!=null;
+                if(!armed&&plan.Sparks!=null) armed=true;
                 bool nuclear=armed&&warhead.Kind==WarheadKind.Nuke;
                 if(nuclear&&(pool.NuclearNear(where,(float)Warhead.SameNuke(VolumeEvolution.FireballRadius(plan)),10)||PendingNuke(where,Warhead.SameNuke(VolumeEvolution.FireballRadius(plan)))))
                 {
                     owner=VisualReplacementWindows.Covered; absorbed++;   // (its detonation was drawn already)
                 }
-                else if(exotic.Kind==ExoticKind.None&&(pool.Absorb(where,SnapshotReader.Vector(e.Origin),plan.VisualEnergyScore,false,nuclear)||armed&&pool.Covers(where,plan.VisualEnergyScore,true,nuclear)))
+                else if(!own&&(pool.Absorb(where,SnapshotReader.Vector(e.Origin),plan.VisualEnergyScore,false,nuclear)||armed&&pool.Covers(where,plan.VisualEnergyScore,true,nuclear)))
                 {
                     owner=VisualReplacementWindows.Covered; absorbed++;   // (a charge already drawn by its detonation: one explosion)
                 }

@@ -28,7 +28,8 @@ namespace VolumetricExplosionFX.Rendering
         readonly ParticleSystem burst, cloud;            // lit dust and spray; the cloud left by the fireball
         readonly TrailShower shower, heavy, runaway;     // burning fragments, heavy chunks, runaway booster
         readonly TrailShower plasma, plasmaSmoke;        // re-entry breakup: glowing fragments, smoke of the heaviest
-        readonly ParticleSystem wake, sparks;            // re-entry breakup: glowing wake and sparks left in the air
+        readonly ParticleSystem wake, sparks;
+        readonly ParticleSystem jetSparks;                // VFX Reconfigured: battery and lithium spark streaks (SparkSpec)            // re-entry breakup: glowing wake and sparks left in the air
         readonly TrailShower dirt;                       // clods thrown out of the crater, streaking dust
         readonly ParticleSystem splash;                  // white column thrown up by a water impact
         readonly Transform sparkGround;                  // plane the sparks bounce on
@@ -56,6 +57,20 @@ namespace VolumetricExplosionFX.Rendering
             smoke=System(gas,"cooling cloud",m.Cloud,settings.ParticlesPerEvent);
             spray=System(gas,"ejecta and spray",m.Cloud,settings.ParticlesPerEvent);
             embers=System(gas,"embers",m.Glow,settings.ParticlesPerEvent);
+            // VFX Reconfigured: the streaks of a spark jet (venting battery, burning lithium): its own system, so hundreds of
+            // them fit, drawn as long motion-blurred streaks (velocity-stretched) that stay visible from afar, white-hot
+            // cooling to orange and red as they fly, falling and bouncing off the ground.
+            jetSparks=System(gas,"spark jets",m.Glow,Mathf.Clamp(settings.ParticlesPerEvent*4,400,1500));
+            Render(jetSparks,ParticleSystemRenderMode.Stretch,0.06f);
+            jetSparks.GetComponent<ParticleSystemRenderer>().minParticleSize=0.0012f;
+            ParticleSystem.NoiseModule jetNoise=jetSparks.noise; jetNoise.enabled=false;
+            ParticleSystem.SizeOverLifetimeModule jetSize=jetSparks.sizeOverLifetime;
+            jetSize.size=new ParticleSystem.MinMaxCurve(1,new AnimationCurve(new Keyframe(0,1),new Keyframe(1,0.45f)));
+            ParticleSystem.ColorOverLifetimeModule jetFade=jetSparks.colorOverLifetime;
+            Gradient jetGradient=new Gradient(); jetGradient.SetKeys(
+                new[]{new GradientColorKey(new Color(1,1,0.95f),0),new GradientColorKey(new Color(1,0.85f,0.6f),0.35f),new GradientColorKey(new Color(1,0.55f,0.4f),1)},
+                new[]{new GradientAlphaKey(1,0),new GradientAlphaKey(1,0.6f),new GradientAlphaKey(0,1)});
+            jetFade.color=jetGradient;
             ring=System(gas,"shock dust ring",m.Cloud,96);
             fragments=System(solid,"visual debris",m.Debris,settings.ParticlesPerEvent);
             chunks=System(solid,"burning chunks",m.Glow,16);
@@ -186,6 +201,7 @@ namespace VolumetricExplosionFX.Rendering
             if(plasmaSmoke!=null) yield return plasmaSmoke.System;
             if(dirt!=null) yield return dirt.System;
             if(splash!=null) yield return splash;
+            if(jetSparks!=null) yield return jetSparks;
             if(groundFlames!=null) yield return groundFlames;
         }
         internal void Begin(BlastContext context)
@@ -286,6 +302,22 @@ namespace VolumetricExplosionFX.Rendering
             sparkAcc=0; flameAcc=0; smokeAcc=0; jetsOut=0;
             if(spark!=null)
             {
+                // Falling (gravity along the blast's up), slowed by the air, bouncing off the ground.
+                float air=c.Air;
+                ParticleSystem.ForceOverLifetimeModule fall=jetSparks.forceOverLifetime;
+                fall.enabled=true; fall.space=ParticleSystemSimulationSpace.Local; fall.x=0; fall.z=0;
+                fall.y=c.Surface||air>0.02f?-c.Gravity*0.9f:0;
+                ParticleSystem.LimitVelocityOverLifetimeModule slow=jetSparks.limitVelocityOverLifetime;
+                slow.enabled=air>0.05f; slow.limit=1e5f; slow.dampen=0; slow.drag=0.8f*air;
+                slow.multiplyDragByParticleSize=false; slow.multiplyDragByParticleVelocity=false;
+                float? ground=c.Surface?0f:(c.Floor.HasValue&&air>0.3f?c.Floor:null);
+                ParticleSystem.CollisionModule hit=jetSparks.collision; hit.enabled=ground.HasValue;
+                if(ground.HasValue)
+                {
+                    sparkGround.localPosition=new Vector3(0,ground.Value,0); sparkGround.localRotation=Quaternion.identity;
+                    hit.type=ParticleSystemCollisionType.Planes; hit.SetPlane(0,sparkGround);
+                    hit.bounce=0.4f; hit.dampen=0.4f; hit.lifetimeLoss=0.2f; hit.radiusScale=0.3f;
+                }
                 for(int j=0;j<jetDirs.Length;j++)
                 {
                     Vector3 d=random.Direction(); if(c.Surface) d.y=Mathf.Abs(d.y)*0.8f+0.2f;
@@ -805,7 +837,7 @@ namespace VolumetricExplosionFX.Rendering
                 jet=Mathf.Clamp01(u*8)*Mathf.Clamp01((1-u)*4)*(0.55f+0.45f*random.Next());
             }
             sparkAcc+=dt*(float)s.Rate*level*jet;
-            int budget=40;
+            int budget=250;
             while(sparkAcc>=1&&budget-->0)
             {
                 sparkAcc-=1;
@@ -813,8 +845,8 @@ namespace VolumetricExplosionFX.Rendering
                 if(s.Jets>0) d=(dir+random.Direction()*(float)s.Spread).normalized;
                 else { d=random.Direction(); d.y=Mathf.Abs(d.y)*0.8f+0.2f; d.Normalize(); }   // (molten droplets thrown up and out)
                 float v=(float)s.Speed*(0.6f+0.6f*random.Next());
-                Emit(embers,Lift(Vector3.zero,0.05f),d*v,(float)s.Size*(0.6f+0.8f*random.Next()),(float)s.Life*(0.5f+random.Next()),
-                    Color.Lerp(C(s.Hot,1),C(s.Cool,1),random.Next()));
+                Emit(jetSparks,Lift(d*0.1f,0.05f),d*v,(float)s.Size*(0.6f+0.8f*random.Next()),(float)s.Life*(0.5f+random.Next()),
+                    Color.Lerp(C(s.Hot,1),C(s.Cool,1),random.Next()*random.Next()));
             }
             if(sparkAcc>=1) sparkAcc=0;
             flameAcc+=dt*(float)s.FlameRate*level*(s.Jets>0?jet:1);
@@ -823,7 +855,8 @@ namespace VolumetricExplosionFX.Rendering
                 flameAcc-=1;
                 Vector3 d=s.Jets>0?(dir+random.Direction()*(float)s.Spread*1.5f).normalized:Upward(random.Direction())*0.4f+Vector3.up*0.6f;
                 float size=(float)s.FlameSize*(0.6f+0.6f*random.Next());
-                Emit(fire,Lift(d*size*0.6f,size),d*(float)s.Speed*(s.Jets>0?0.25f:0.3f)+Vector3.up*0.5f,size,0.25f+0.2f*random.Next(),C(s.Flame,0.75f*level));
+                if(s.Jets>0) size*=0.7f+0.8f*random.Next();
+                Emit(fire,Lift(d*size*(s.Jets>0?0.6f+1.6f*random.Next():0.6f),size),d*(float)s.Speed*(s.Jets>0?0.25f:0.3f)+Vector3.up*0.5f,size,0.25f+0.2f*random.Next(),C(s.Flame,0.75f*level));
             }
             smokeAcc+=dt*(float)s.SmokeRate*level;
             while(smokeAcc>=1)
