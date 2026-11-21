@@ -16,6 +16,7 @@ Player documentation: `package/README.md` (shipped in the mod folder). Changes: 
 | `tools/build.py` | Builds `build/VolumetricFXReconfigured.dll` from both source trees |
 | `tools/package.py` | Assembles `build/GameData/VolumetricFXReconfigured`, zips it into `release/`, `--deploy` installs it |
 | `tools/make.py` | Everything in order: explosion shaders (Unity), plugin, tests, package (`--deploy`) |
+| `tools/release.py` | Windows: builds and publishes the GitHub Release for the tagged version (zip + changelog notes; asks first) |
 | `package/` | Hand-written files shipped in the mod folder (README, CHANGELOG) |
 | `GameData/` | The packaged mod (generated, not tracked) |
 | `release/` | Release zips (not tracked; published on GitHub Releases) |
@@ -42,6 +43,10 @@ Explosion shaders can only be rebuilt on Windows (Unity 2019.4.18f1 can't be lic
 2. `git clone https://github.com/waxedlightlyweatheredcutcopperstair001/VFX-Reconfigured.git`
 3. Copy `config.example.json` to `config.local.json` and set your KSP folder and `Unity.exe`.
 4. `py tools\make.py --deploy` builds everything and installs it into KSP (`--no-shaders` skips the Unity step).
+
+To publish a release (Windows, with the GitHub CLI logged in: `winget install GitHub.cli`, `gh auth login`): check out
+the version's tag and run `py tools\release.py`. It checks the tag, builds, shows the notes and asks before publishing
+(`--no-build`, `--no-shaders`, `--draft`).
 
 Elsewhere, `python3 tools/build.py` compiles the plugin (only `kspRoot` needed: a folder with `KSP_x64_Data/Managed`)
 and `dotnet run --project VolumetricExplosionFX/Tests/VolumetricExplosionFX.Tests.csproj -c Release` runs the tests.
