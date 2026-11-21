@@ -23,8 +23,9 @@ namespace VolumetricExplosionFX.Ksp
             {
                 if(!searched) { searched=true; Find(); }
                 if(cloudsObject==null||bodyField==null||layerField==null) { Known=false; return; }
+                if(!reportedDraw) { reportedDraw=true; ReportCloudDraw(); }
                 UnityEngine.Object[] objects=UnityEngine.Object.FindObjectsOfType(cloudsObject);
-                var layers=new System.Collections.Generic.List<Vector2>(); int skipped=0;
+                var layers=new System.Collections.Generic.List<Vector2>(); int skipped=0; string all="";
                 for(int i=0;i<objects.Length;i++)
                 {
                     if(bodyField.GetValue(objects[i]) as string!=body.bodyName) continue;
@@ -35,6 +36,7 @@ namespace VolumetricExplosionFX.Ksp
                     // over Kerbin) and very tall ones (one reached 80 km) made a band from the ground to space, so every
                     // explosion counted as under the clouds.
                     if(r>0&&b>a&&a>=300&&b-a<=20000&&b<=30000) layers.Add(new Vector2(a,b)); else skipped++;
+                    all+=(all.Length>0?", ":"")+a.ToString("0")+"-"+b.ToString("0")+" m";
                 }
                 // Layers that touch are one; two bands at most: the lowest, and everything above it (the cumulonimbus tops).
                 layers.Sort((x,y)=>x.x.CompareTo(y.x));
@@ -51,6 +53,8 @@ namespace VolumetricExplosionFX.Ksp
                 string text=Known?body.bodyName+" "+lo0.ToString("0")+"-"+hi0.ToString("0")+" m"+(lo1<float.MaxValue?", "+lo1.ToString("0")+"-"+hi1.ToString("0")+" m":""):null;
                 if(text==null&&skipped>0) text=body.bodyName+" none used";
                 if(text!=null) text+=skipped>0?" ("+skipped+" ground-level or very tall layer(s) not used)":"";
+                if(text==null) text=body.bodyName+" none found ("+objects.Length+" EVE cloud object(s) in the scene)";
+                text+="; every layer: "+(all.Length>0?all:"none");
                 if(text!=null&&text!=logged) { logged=text; Debug.Log("[VEFX] Cloud layers (EVE): "+text+": explosions are hidden behind a layer lying wholly between the eye and them"); }
             }
             catch(Exception ex)
@@ -59,6 +63,28 @@ namespace VolumetricExplosionFX.Ksp
                 Debug.LogWarning("[VEFX] Cloud layers unreadable ("+ex.GetType().Name+"): explosions are drawn over the clouds");
             }
         }
+        // VFX Reconfigured: when the clouds are drawn relative to the volumes decides whether the hiding can work (the probe
+        // grabs the image at Overlay-1; clouds drawn earlier leave nothing to compare): logged once, with the render stack.
+        static bool reportedDraw;
+        static void ReportCloudDraw()
+        {
+            var text=new System.Text.StringBuilder("[VFXR] EVE cloud materials (shader, queue):");
+            var seen=new System.Collections.Generic.HashSet<string>();
+            foreach(Renderer r in UnityEngine.Object.FindObjectsOfType<Renderer>())
+            {
+                if(r==null) continue;
+                foreach(Material m in r.sharedMaterials)
+                {
+                    if(m==null||m.shader==null) continue;
+                    string n=m.shader.name;
+                    if(n.IndexOf("cloud",StringComparison.OrdinalIgnoreCase)<0&&n.IndexOf("raymarch",StringComparison.OrdinalIgnoreCase)<0&&n.IndexOf("EVE",StringComparison.Ordinal)<0) continue;
+                    string entry=n+" "+m.renderQueue+(r.enabled?"":" (off)");
+                    if(seen.Add(entry)) text.Append(" | "+entry);
+                }
+            }
+            if(seen.Count==0) text.Append(" none on renderers (drawn by command buffers: see the render stack)");
+            Debug.Log(text.ToString());
+        }
         static void Find()
         {
             foreach(AssemblyLoader.LoadedAssembly a in AssemblyLoader.loadedAssemblies)
@@ -66,15 +92,27 @@ namespace VolumetricExplosionFX.Ksp
                 if(a.name!="Atmosphere") continue;
                 cloudsObject=a.assembly.GetType("Atmosphere.CloudsObject");
                 Type volume=a.assembly.GetType("Atmosphere.CloudsRaymarchedVolume");
-                if(cloudsObject==null||volume==null) { cloudsObject=null; return; }
+                if(cloudsObject==null||volume==null)
+                {
+                    Debug.Log("[VFXR] EVE found, but not its raymarched cloud types (CloudsObject "+(cloudsObject!=null)+", CloudsRaymarchedVolume "+(volume!=null)+"): explosions are drawn over the clouds");
+                    cloudsObject=null; return;
+                }
                 const BindingFlags any=BindingFlags.Public|BindingFlags.NonPublic|BindingFlags.Instance;
                 bodyField=cloudsObject.GetField("body",any); layerField=cloudsObject.GetField("layerRaymarchedVolumeV5",any);
                 inner=volume.GetProperty("InnerSphereRadius",BindingFlags.Public|BindingFlags.Instance);
                 outer=volume.GetProperty("OuterSphereRadius",BindingFlags.Public|BindingFlags.Instance);
                 planet=volume.GetProperty("PlanetRadius",BindingFlags.Public|BindingFlags.Instance);
-                if(inner==null||outer==null||planet==null) cloudsObject=null;
+                if(inner==null||outer==null||planet==null||bodyField==null||layerField==null)
+                {
+                    var fields=new System.Text.StringBuilder();
+                    foreach(FieldInfo f in cloudsObject.GetFields(any)) fields.Append(f.Name+":"+f.FieldType.Name+" ");
+                    Debug.Log("[VFXR] EVE's cloud layers not readable (body "+(bodyField!=null)+", layer "+(layerField!=null)+", radii "+(inner!=null&&outer!=null&&planet!=null)+
+                        "): explosions are drawn over the clouds. CloudsObject fields: "+fields);
+                    cloudsObject=null;
+                }
                 return;
             }
+            Debug.Log("[VFXR] EVE (Atmosphere.dll) not loaded: no cloud layers to hide explosions behind");
         }
     }
 }

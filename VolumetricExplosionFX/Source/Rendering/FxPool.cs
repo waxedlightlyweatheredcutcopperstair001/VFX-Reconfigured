@@ -63,6 +63,7 @@ namespace VolumetricExplosionFX.Rendering
         LowResVolumes lowRes;
         // Video memory saver: chosen in the settings, automatic on cards with little memory, or forced by a failed image.
         internal static int VideoMemory { get { return SystemInfo.graphicsMemorySize; } }
+        bool saverCloudLogged;
         internal bool SavesMemory { get { return FxSettings.SavesMemory(settings.LowMemory,VideoMemory)||(lowRes!=null&&lowRes.Failures>0); } }
         readonly PlumeOverlays plumes=new PlumeOverlays();   // engine flames drawn again over the clouds in front of them
         void OnPreCull(Camera cam)
@@ -88,6 +89,7 @@ namespace VolumetricExplosionFX.Rendering
                 CelestialBody body=FlightGlobals.currentMainBody;
                 CloudLayers.Refresh(body);
                 lowRes.CloudOcclusion=CloudLayers.Known&&body!=null&&settings.Volumetric&&!saver;
+                if(CloudLayers.Known&&saver&&!saverCloudLogged) { saverCloudLogged=true; Debug.Log("[VFXR] Video memory saver on: explosions are not hidden behind EVE's clouds"); }
                 if(lowRes.CloudOcclusion) { Vector3 c=body.position; lowRes.CloudBands=CloudLayers.Bands; lowRes.Planet=new Vector4(c.x,c.y,c.z,(float)body.Radius); }
                 lowRes.ShowProbe(cam,lowRes.CloudOcclusion);
                 int divisor=saver?Math.Max(settings.VolumeDivisor,2):settings.VolumeDivisor;

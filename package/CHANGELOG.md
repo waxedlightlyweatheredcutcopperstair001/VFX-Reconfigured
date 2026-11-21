@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.2
+- Cloud diagnostics: KSP.log now says whether EVE's cloud layers were found (and why not), every layer's altitudes,
+  the cloud materials' render queues, and when the video memory saver turns off hiding explosions behind clouds.
+
 ## 0.3.1
 - Atmospheric haze varies with height: a cloud reaching into thin air is hazed less at its top than at its base.
 
