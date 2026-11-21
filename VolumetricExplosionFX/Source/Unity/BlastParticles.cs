@@ -280,6 +280,19 @@ namespace VolumetricExplosionFX.Rendering
                 }
             }
             else arcCount=0;
+            // VFX Reconfigured: a stream of sparks, flames and smoke after the blast (SparkSpec: venting battery cells,
+            // burning lithium).
+            spark=!reentry&&settings.Explosions&&plan.Sparks!=null&&plan.Look!=null&&plan.Look.Modern?plan.Sparks:null;
+            sparkAcc=0; flameAcc=0; smokeAcc=0; jetsOut=0;
+            if(spark!=null)
+            {
+                for(int j=0;j<jetDirs.Length;j++)
+                {
+                    Vector3 d=random.Direction(); if(c.Surface) d.y=Mathf.Abs(d.y)*0.8f+0.2f;
+                    jetDirs[j]=d.normalized;
+                }
+                Horizon=Mathf.Max(Horizon,(float)(spark.End+spark.Life*1.5)+(spark.SmokeRate>0?6:1));
+            }
             if(!reentry) EmitEmbers(burning,radius,speed);
             EmitDebris(radius,speed);
             if(!reentry) { if(shower!=null) EmitShower(); else EmitChunks(burning); }
@@ -765,12 +778,70 @@ namespace VolumetricExplosionFX.Rendering
                     puff*(0.7f+random.Next()*0.6f),life*(0.85f+random.Next()*0.3f),color);
             }
         }
+        SparkSpec spark; float sparkAcc, flameAcc, smokeAcc; int jetsOut;
+        readonly Vector3[] jetDirs=new Vector3[4];
+        static Color C(Vec3 v,float a) { return new Color((float)v.X,(float)v.Y,(float)v.Z,a); }
+        void TickSparks(float age,float dt)
+        {
+            SparkSpec s=spark;
+            float t=age-(float)s.Start, length=(float)s.Seconds;
+            if(t<0||t>length) return;
+            float level=1-0.6f*t/length, jet=1;
+            Vector3 dir=Vector3.up;
+            if(s.Jets>0)
+            {
+                // One cell after another: each jet bursts out with a pop, roars, sputters and dies.
+                float seg=length/s.Jets; int j=Mathf.Min((int)(t/seg),s.Jets-1); float u=(t-j*seg)/seg;
+                dir=jetDirs[j%jetDirs.Length];
+                if(j>=jetsOut)
+                {
+                    jetsOut=j+1;
+                    if(s.PopFlash>0)
+                    {
+                        float pop=(float)s.PopFlash*(1.5f+random.Next());
+                        Emit(fire,Lift(dir*pop*0.2f,pop),Vector3.zero,pop,0.12f,new Color(1,0.85f,0.6f,0.9f));
+                    }
+                }
+                jet=Mathf.Clamp01(u*8)*Mathf.Clamp01((1-u)*4)*(0.55f+0.45f*random.Next());
+            }
+            sparkAcc+=dt*(float)s.Rate*level*jet;
+            int budget=40;
+            while(sparkAcc>=1&&budget-->0)
+            {
+                sparkAcc-=1;
+                Vector3 d;
+                if(s.Jets>0) d=(dir+random.Direction()*(float)s.Spread).normalized;
+                else { d=random.Direction(); d.y=Mathf.Abs(d.y)*0.8f+0.2f; d.Normalize(); }   // (molten droplets thrown up and out)
+                float v=(float)s.Speed*(0.6f+0.6f*random.Next());
+                Emit(embers,Lift(Vector3.zero,0.05f),d*v,(float)s.Size*(0.6f+0.8f*random.Next()),(float)s.Life*(0.5f+random.Next()),
+                    Color.Lerp(C(s.Hot,1),C(s.Cool,1),random.Next()));
+            }
+            if(sparkAcc>=1) sparkAcc=0;
+            flameAcc+=dt*(float)s.FlameRate*level*(s.Jets>0?jet:1);
+            while(flameAcc>=1)
+            {
+                flameAcc-=1;
+                Vector3 d=s.Jets>0?(dir+random.Direction()*(float)s.Spread*1.5f).normalized:Upward(random.Direction())*0.4f+Vector3.up*0.6f;
+                float size=(float)s.FlameSize*(0.6f+0.6f*random.Next());
+                Emit(fire,Lift(d*size*0.6f,size),d*(float)s.Speed*(s.Jets>0?0.25f:0.3f)+Vector3.up*0.5f,size,0.25f+0.2f*random.Next(),C(s.Flame,0.75f*level));
+            }
+            smokeAcc+=dt*(float)s.SmokeRate*level;
+            while(smokeAcc>=1)
+            {
+                smokeAcc-=1;
+                Vector3 d=s.Jets>0?dir:Upward(random.Direction())*0.3f+Vector3.up*0.7f;
+                float size=(float)s.SmokeSize*(0.7f+0.6f*random.Next());
+                Emit(smoke,Lift(d*(float)s.FlameSize,size),d*1.2f+Vector3.up*(1+random.Next())+wind*0.4f,size,3+2*random.Next(),
+                    C(s.Smoke,(float)s.SmokeAlpha*Mathf.Clamp((float)Reconfig.SmokeOpacity,0.1f,2)));
+            }
+        }
         readonly float[] arcTimes=new float[6];
         int arcCount, arcNext; float arcSize, arcPower;
         internal void Tick(float age,float dt,float groundFire,bool volume,in VolumeState state)
         {
             if(!active) return;
             FxPlan plan=c.Plan; FxSettings settings=c.Settings;
+            if(spark!=null) TickSparks(age,dt);
             while(arcNext<arcCount&&age>=arcTimes[arcNext])
             {
                 // A later arc of a shorted battery: smaller, bluer, with a few sparks.

@@ -567,6 +567,12 @@ namespace VolumetricExplosionFX.Core
                 s.SmokeR=0.74+(0.9-0.74)*t; s.SmokeG=0.7+(0.9-0.7)*t; s.SmokeB=0.82+(0.93-0.82)*t;
                 return;
             }
+            // Fission pulse units: several bursts churn up a dusty, grey-brown cloud.
+            if(plan.Exotic==ExoticKind.PulseUnits)
+            {
+                s.SmokeR=0.58+(0.66-0.58)*t; s.SmokeG=0.5+(0.63-0.5)*t; s.SmokeB=0.44+(0.6-0.44)*t;
+                return;
+            }
             // (The cap of a ground burst is the fireball's own condensing gas with the dust in it: light grey-brown in
             // sunlight whatever the ground; the stem under it carries the ground's colour. It was a dark olive over grass.)
             if(kind==NukeKind.Surface) { r1=0.35*plan.DustR+0.42; g1=0.35*plan.DustG+0.38; b1=0.35*plan.DustB+0.34; }

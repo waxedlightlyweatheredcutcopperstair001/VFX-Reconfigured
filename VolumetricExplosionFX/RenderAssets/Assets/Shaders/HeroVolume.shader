@@ -136,11 +136,14 @@ Shader "VolumetricExplosionFX/HeroVolume"
                 return lerp(c,float3(1,0.96,0.86),_Motion.y*saturate(t*2.5-1.4));
                 #endif
             }
-            // (VFX Reconfigured: _Reconf.z = 1, antimatter: violet-blue ionised air round a white-hot core.)
+            // (VFX Reconfigured: _Reconf.z = 1, antimatter: violet-blue ionised air round a white-hot core; 2, lithium:
+            // blinding white with a crimson edge; 3, nuclear salt water: a steam blast, pale and faintly blue.)
             float3 FlameTint(float3 c,float t)
             {
                 if(_Reconf.z<0.5) return c;
                 float lum=dot(c,float3(0.3,0.5,0.2));
+                if(_Reconf.z>2.5) return lerp(c,min(lum*float3(0.88,0.95,1.1),0.985),0.75);
+                if(_Reconf.z>1.5) return lerp(c,min(lum*lerp(float3(1.3,0.45,0.6),float3(1.05,0.97,1.0),saturate(t*1.5-0.4)),0.985),0.85);
                 return lerp(c,min(lum*lerp(float3(0.75,0.6,1.3),float3(0.95,0.93,1.05),saturate(t*1.6-0.6)),0.985),0.9);
             }
             float3 Glow(float t) { return -log(1-min(FlameTint(FlameColour(saturate(t)),saturate(t)),0.985)); }

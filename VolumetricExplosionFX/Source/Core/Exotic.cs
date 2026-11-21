@@ -15,11 +15,39 @@ namespace VolumetricExplosionFX.Core
     // Graviolium (Blueshift): fictional. An electric-blue flash, then for a few seconds a gravitational lens (the world
     // behind it bent into an Einstein ring and arcs around a small black core with a bright blue rim), a ring of
     // stretch-and-squeeze rippling outward like a gravitational wave, and a collapse with a last blue burst.
-    public enum ExoticKind { None, Antimatter, Graviolium }
+    //
+    // Lithium (Near Future Propulsion): a metal fire. Burning lithium is blindingly white with a crimson tint (lithium's
+    // flame colour), throws molten droplets, and makes a dense white smoke of lithium oxide and hydroxide; metal fires are
+    // hard to put out, so it burns on for a long time.
+    //
+    // Nuclear salt water (Far Future Technologies): uranium salt solution kept subcritical in neutron-absorbing tubes. A
+    // burst tank lets it pool into a critical mass: a criticality excursion, as in real solution accidents. A blue flash of
+    // ionised air (a fraction of a second, as eyewitnesses of criticality accidents described it), repeated as the boiling
+    // solution falls back together, a violent steam explosion of tiny nuclear yield, and a white steam plume with a faint
+    // grey haze of fallout.
+    //
+    // Fission pulse units (Far Future Technologies, Orion-style): small nuclear charges (Orion designs: about 0.1 to
+    // 2.5 kt). Drawn as a chain detonation: a few of them going off one after another in blinding flashes (1 kt each),
+    // around a dusty, grey-brown mushroom of their combined yield.
+    public enum ExoticKind { None, Antimatter, Graviolium, Lithium, SaltWater, PulseUnits }
     public struct ExoticInfo
     {
         public ExoticKind Kind;
         public double Units;   // the resource's amount in the part
+        public double MassKg;  // its mass
+    }
+    // A stream of sparks, flames and smoke over time (BlastParticles.TickSparks): a battery's venting jets, lithium's
+    // molten droplets.
+    public sealed class SparkSpec
+    {
+        public int Jets;                        // 0: a fountain all round; else directional jets, one after another
+        public double Start, Seconds;           // when it starts and how long it lasts (real s)
+        public double Rate, Speed, Spread, Size, Life;   // sparks per second, m/s, cone spread, size (m), lifetime (s)
+        public Vec3 Hot, Cool;                  // spark colours (each spark between them)
+        public double FlameRate, FlameSize; public Vec3 Flame;
+        public double SmokeRate, SmokeSize, SmokeAlpha; public Vec3 Smoke;
+        public double PopFlash;                 // size of the flash as each jet bursts out (0: none)
+        public double End { get { return Start+Seconds; } }
     }
     public struct LensState
     {
@@ -32,7 +60,9 @@ namespace VolumetricExplosionFX.Core
     }
     public static class Exotic
     {
-        public const string AntimatterName="Antimatter", GravioliumName="Graviolium";
+        public const string AntimatterName="Antimatter", GravioliumName="Graviolium", LithiumName="Lithium",
+            SaltWaterName="NuclearSaltWater", PulseUnitsName="FissionPulses";
+        static bool Is(ResourceSnapshot r,string name) { return string.Equals(r.Name,name,StringComparison.OrdinalIgnoreCase); }
         public const double AntimatterJoulesPerUnit=36e9;   // FFT's tanks
         public const double AntimatterVisibleShare=0.1;     // drawn at a tenth of FFT's yield
         const double TntJoules=4.184e6;
@@ -45,15 +75,22 @@ namespace VolumetricExplosionFX.Core
         {
             var info=new ExoticInfo();
             if(p==null||p.Resources==null) return info;
-            double anti=0, grav=0;
+            double anti=0, grav=0, li=0, liKg=0, nsw=0, nswKg=0, pulse=0;
             for(int i=0;i<p.Resources.Length;i++)
             {
                 ResourceSnapshot r=p.Resources[i]; if(r==null||r.Name==null) continue;
-                if(string.Equals(r.Name,AntimatterName,StringComparison.OrdinalIgnoreCase)) anti+=r.Amount;
-                else if(string.Equals(r.Name,GravioliumName,StringComparison.OrdinalIgnoreCase)) grav+=r.Amount;
+                if(Is(r,AntimatterName)) anti+=r.Amount;
+                else if(Is(r,GravioliumName)) grav+=r.Amount;
+                else if(Is(r,LithiumName)) { li+=r.Amount; liKg+=r.MassKg; }
+                else if(Is(r,SaltWaterName)) { nsw+=r.Amount; nswKg+=r.MassKg; }
+                else if(Is(r,PulseUnitsName)) pulse+=r.Amount;
             }
+            // (the most violent one decides)
             if(anti>=MinUnits) { info.Kind=ExoticKind.Antimatter; info.Units=anti; }
+            else if(pulse>=0.5) { info.Kind=ExoticKind.PulseUnits; info.Units=pulse; }
+            else if(nsw>=1) { info.Kind=ExoticKind.SaltWater; info.Units=nsw; info.MassKg=nswKg>0?nswKg:nsw*1.05; }
             else if(grav>=MinUnits) { info.Kind=ExoticKind.Graviolium; info.Units=grav; }
+            else if(li>=1) { info.Kind=ExoticKind.Lithium; info.Units=li; info.MassKg=liKg>0?liKg:li*0.53; }
             return info;
         }
 
@@ -122,5 +159,108 @@ namespace VolumetricExplosionFX.Core
             return s;
         }
         public static double LensEnd(double units) { return LensDuration(units)+1.2; }
+
+        // ---------------- Lithium ----------------
+        static double Log(double x) { return Math.Log10(1+Math.Max(x,0)); }
+        public static double LithiumBurnSeconds(double kg) { return Numbers.Clamp(6+5*Log(kg/20),6,30); }
+        // A burst of burning metal (incendiary: it splashes and keeps burning on the ground).
+        public static WarheadInfo LithiumWarhead(double kg)
+        {
+            return new WarheadInfo { Kind=WarheadKind.Incendiary, TntKg=Numbers.Clamp(kg*0.25,0.5,5000), RangeM=Numbers.Clamp(4*Math.Pow(Math.Max(kg,1),1.0/3),3,60) };
+        }
+        public static void ApplyLithium(FxPlan plan,double units,double kg)
+        {
+            if(plan==null) return;
+            plan.Exotic=ExoticKind.Lithium; plan.ExoticUnits=units; plan.ExoticKg=kg;
+            plan.PartKind=PartKind.LiquidTank;   // (a fire is left where it lands: Residue)
+            plan.Soot=0.02; plan.WhiteFlame=1; plan.OreKg=0;
+            plan.SmokeR=0.94; plan.SmokeG=0.94; plan.SmokeB=0.95;
+            plan.Sparks=LithiumSparks(kg);
+            plan.Lifetime=Math.Max(plan.Lifetime,plan.Sparks.End+2);
+        }
+        public static SparkSpec LithiumSparks(double kg)
+        {
+            double l=Log(kg/10);
+            return new SparkSpec { Jets=0, Start=0.05, Seconds=LithiumBurnSeconds(kg),
+                Rate=Numbers.Clamp(25+15*l,25,110), Speed=Numbers.Clamp(3+2*l,3,9), Spread=1, Size=Numbers.Clamp(0.05+0.02*l,0.05,0.14), Life=1.2,
+                Hot=new Vec3(1,0.95,0.95), Cool=new Vec3(1,0.3,0.4),
+                FlameRate=10, FlameSize=Numbers.Clamp(0.6+0.5*l,0.6,3), Flame=new Vec3(1,0.45,0.55),
+                SmokeRate=5, SmokeSize=Numbers.Clamp(1.5+l,1.5,6), SmokeAlpha=0.5, Smoke=new Vec3(0.95,0.95,0.96) };
+        }
+
+        // ---------------- Batteries ----------------
+        // A battery going into thermal runaway: its cells vent one after another in jets of sparks and flame (a few
+        // seconds for a big pack), each bursting out with a pop, under grey-white smoke.
+        public static SparkSpec BatterySparks(double ec)
+        {
+            if(ec<20) return null;
+            double l=Log(ec/100);
+            return new SparkSpec { Jets=(int)Numbers.Clamp(1+Math.Floor(Log(ec/250)*1.2),1,4), Start=0.15, Seconds=Numbers.Clamp(1.2+1.6*Log(ec/200),1.2,7),
+                Rate=Numbers.Clamp(40+25*l,40,140), Speed=Numbers.Clamp(10+4*l,10,22), Spread=0.18, Size=Numbers.Clamp(0.03+0.01*l,0.03,0.07), Life=0.6,
+                Hot=new Vec3(1,0.95,0.8), Cool=new Vec3(1,0.6,0.2),
+                FlameRate=12, FlameSize=Numbers.Clamp(0.3+0.15*l,0.3,0.9), Flame=new Vec3(1,0.55,0.18),
+                SmokeRate=4, SmokeSize=Numbers.Clamp(0.8+0.4*l,0.8,2), SmokeAlpha=0.35, Smoke=new Vec3(0.78,0.78,0.8), PopFlash=Numbers.Clamp(0.5+0.2*l,0.5,1.2) };
+        }
+
+        // ---------------- Nuclear salt water ----------------
+        public static WarheadInfo SaltWaterWarhead(double kg)
+        {
+            double tnt=Numbers.Clamp(kg*0.05,5,20000);
+            return new WarheadInfo { Kind=WarheadKind.Bomb, TntKg=tnt, RangeM=Numbers.Clamp(7*Math.Pow(tnt,1.0/3),5,250) };
+        }
+        public static void ApplySaltWater(FxPlan plan,double units,double kg)
+        {
+            if(plan==null) return;
+            plan.Exotic=ExoticKind.SaltWater; plan.ExoticUnits=units; plan.ExoticKg=kg;
+            // A steam explosion: hardly any flame, a white cloud of steam with a faint grey haze (Chemistry.SmokeMix).
+            plan.FireFraction*=0.12; plan.BurnableKg*=0.12; plan.Soot=0; plan.WhiteFlame=0; plan.OreKg=0;
+            plan.VaporFraction=Math.Max(plan.VaporFraction,0.85);
+            plan.SmokeR=0.9; plan.SmokeG=0.91; plan.SmokeB=0.93;
+        }
+        // The blue flashes of the excursion: at once, then weaker as the boiling solution falls back together.
+        static readonly double[] SaltFlashTimes={0,0.45,1.2}, SaltFlashPower={2,0.8,0.5};
+        public static double SaltWaterFlash(double age)
+        {
+            double f=0;
+            for(int i=0;i<SaltFlashTimes.Length;i++) { double t=age-SaltFlashTimes[i]; if(t>=0) f+=SaltFlashPower[i]*Math.Exp(-t/0.08); }
+            return f;
+        }
+        public static double SaltWaterEnd { get { return 2.5; } }
+
+        // ---------------- Fission pulse units ----------------
+        public const double PulseUnitKt=1;
+        // A 1 kt unit's fireball radius (m; VolumeEvolution.FireballRadius for 1 kt): where the chain's flashes go off.
+        public static double PulseUnitBallRadius { get { return Numbers.Clamp(61*Math.Pow(PulseUnitKt,0.4),30,3000); } }
+        // How many go off: 3 for FFT's smallest magazine (1,400 units), up to 7.
+        public static int PulseCount(double units)
+        {
+            if(units<1.5) return 1;
+            return (int)Numbers.Clamp(Math.Round(2+Math.Log(units/700,2)),2,7);
+        }
+        public static WarheadInfo PulseWarhead(double units)
+        {
+            double tnt=PulseCount(units)*PulseUnitKt*1e6;
+            return new WarheadInfo { Kind=WarheadKind.Nuke, TntKg=tnt, RangeM=Numbers.Clamp(900*Math.Pow(tnt/2e7,0.4),150,20000) };
+        }
+        public static void ApplyPulseUnits(FxPlan plan,double units)
+        {
+            if(plan==null) return;
+            plan.Exotic=ExoticKind.PulseUnits; plan.ExoticUnits=units;
+        }
+        // When each unit goes off (real s) and where (in fireball radii, x/z across, y up), the same for the same seed.
+        public static void PulseSchedule(double units,uint seed,double[] times,Vec3[] offsets,out int count)
+        {
+            count=Math.Min(PulseCount(units),Math.Min(times.Length,offsets.Length));
+            var rnd=new SplitRandom(seed^0x50554C53u);
+            double t=0;
+            for(int i=0;i<count;i++)
+            {
+                times[i]=t; t+=0.12+0.28*rnd.Next();
+                double a=rnd.Next()*Math.PI*2, r=i==0?0:0.5+0.9*rnd.Next();
+                offsets[i]=new Vec3(Math.Cos(a)*r,i==0?0:(rnd.Next()-0.3)*0.8,Math.Sin(a)*r);
+            }
+        }
+        // One unit's flash: blinding, then its fireball's glow.
+        public static double PulseFlash(double sinceDetonation) { return sinceDetonation<0?0:2.5*Math.Exp(-sinceDetonation/0.09)+0.5*Math.Exp(-sinceDetonation/0.7); }
     }
 }

@@ -420,7 +420,7 @@ namespace VolumetricExplosionFX.Rendering
             // A nuclear flash lights the land for kilometres around.
             if(plan.Warhead==WarheadKind.Nuke&&plan.Look!=null&&plan.Look.Modern) flash.range=Mathf.Clamp((float)layout.RadiusMeters*10,800,12000);
             flash.intensity=dome?(float)VolumeEvolution.LightIntensity(volume.State):3*(float)plan.FireFraction*lightScale;
-            exotic.Begin(plan,VolumeEvolution.FireballRadius(plan),air);
+            exotic.Begin(plan,VolumeEvolution.FireballRadius(plan),air,s.PersistentId^(uint)plan.ExoticUnits);
             if(exotic.Active) lit=light&&settings.Lighting;   // (Graviolium's flash has no fire of its own)
             LightWanted=lit?flash.intensity:0;
         }
@@ -656,7 +656,7 @@ namespace VolumetricExplosionFX.Rendering
             bool lingering=age<residueEnd;
             double limit=Math.Max(Math.Max(VolumeEvolution.RealDuration(plan),groundFireEnd)+4,Math.Max(residueEnd+14,particles.Horizon));
             if(splashVolume!=null) limit=Math.Max(limit,splashVolume.Duration+1);
-            if(exotic.Active) limit=Math.Max(limit,Exotic.LensEnd(plan.ExoticUnits)+1);
+            if(exotic.Active) limit=Math.Max(limit,exotic.End+1);
             if(age>limit||(!HasVolume&&!refracting&&!alive&&!particles.Pending&&groundFire<=0&&!lingering))
             { Clear(); return false; }
             return true;

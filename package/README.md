@@ -1,4 +1,4 @@
-# Volumetric FX Reconfigured 0.4.1
+# Volumetric FX Reconfigured 0.5.0
 
 Volumetric explosions, fire, smoke and wreckage, and volumetric engine dust and steam, for Kerbal Space Program
 1.12.5, in one mod. Based on **Volumetric Explosion FX** 1.1.1 and **Volumetric Ground FX** 1.1.0 by Warnix (both MIT),
@@ -21,6 +21,7 @@ Windows (DirectX 11). One toolbar button opens the settings, in flight and at th
 - A bright, white-hot flash (Explosion brightness) whose glow lasts by the explosion's size: small blasts flash
   briefly, big ones glow longer (the setting is a medium explosion's, 1.5 s). Then the smoke's opacity halves every 3 seconds and it is gone after a minute at most. Only
   fires (fuel tanks, batteries) glow longer. Nuclear explosions glow and linger much longer.
+- Batteries short out in an arc flash, then vent jets of sparks and flame like overheating cells.
 - What explodes depends on the part: wings, control surfaces, structural, fairing and command/probe parts break into
   debris with dust and smoke that hangs for a few seconds and settles; batteries flash and burn by their charge; fuel
   tanks blow up by how full they are, and an empty tank doesn't explode at all.
@@ -39,6 +40,9 @@ Windows (DirectX 11). One toolbar button opens the settings, in flight and at th
 - Graviolium (Blueshift): an electric-blue flash, then a gravitational lens for 3 to 6 s (15 to 600 m across with the
   tank's size): the world behind bent into an Einstein ring and arcs round a small black core with a blue rim, a ring of
   stretch-and-squeeze rippling outward, and a collapse with a last blue burst.
+- Lithium (Near Future Propulsion): a white-crimson metal fire with molten droplets and dense white smoke, burning on.
+- Nuclear Salt Water (Far Future Technologies): blue criticality flashes, a steam blast and a white steam cloud.
+- Fission Pulse Units (Far Future Technologies): a chain of nuclear flashes around a dusty mushroom.
 
 **Engine dust**
 - The big billowing launch plumes only appear on launch pads (not a plane on the runway).

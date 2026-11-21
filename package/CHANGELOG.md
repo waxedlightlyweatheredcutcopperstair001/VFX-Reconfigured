@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.5.0
+- More exotic fuel explosions (Explosion look > Exotic fuel explosions), for any part holding them:
+  - Lithium (Near Future Propulsion): a white-crimson metal fire. A white flash, then a flickering glare that lights the
+    land pink-white, a fountain of molten droplets, crimson-tinted flames, dense white smoke, and a fire left burning
+    where it lands. 6 to 30 s by the mass of lithium.
+  - Nuclear Salt Water (Far Future Technologies): the solution pools into a critical mass. Blue criticality flashes
+    (a fraction of a second, repeating twice more, weaker, as the boiling solution falls back together), a steam
+    explosion with a pale fireball, and a white steam cloud with a faint grey haze.
+  - Fission Pulse Units (Far Future Technologies): a chain detonation. 3 to 7 units (1 kt each; 3 for FFT's smallest
+    magazine) go off one after another a fraction of a second apart, each a blinding flash, around a dusty grey-brown
+    mushroom of their combined yield.
+- Batteries vent like real cells in thermal runaway: after the arc flash, jets of sparks and flame burst out one after
+  another (1 to 4 jets, 1 to 7 s by charge), each with a pop, under grey-white smoke.
+
 ## 0.4.1
 - Fix: a large black square at an antimatter blast and at the start and end of a Graviolium lens. The glow's soft
   edge overflowed against the sky (its depth is the far plane) and drew NaN, as black, over the glow's whole quad.

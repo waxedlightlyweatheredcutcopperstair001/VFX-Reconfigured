@@ -199,6 +199,18 @@ namespace VolumetricExplosionFX.Ksp
                     {
                         warhead=Exotic.AntimatterWarhead(exotic.Units); Warhead.Apply(plan,warhead); Exotic.ApplyAntimatter(plan,exotic.Units);
                     }
+                    else if(exotic.Kind==ExoticKind.PulseUnits)
+                    {
+                        warhead=Exotic.PulseWarhead(exotic.Units); Warhead.Apply(plan,warhead); Exotic.ApplyPulseUnits(plan,exotic.Units);
+                    }
+                    else if(exotic.Kind==ExoticKind.SaltWater)
+                    {
+                        warhead=Exotic.SaltWaterWarhead(exotic.MassKg); Warhead.Apply(plan,warhead); Exotic.ApplySaltWater(plan,exotic.Units,exotic.MassKg);
+                    }
+                    else if(exotic.Kind==ExoticKind.Lithium)
+                    {
+                        warhead=Exotic.LithiumWarhead(exotic.MassKg); Warhead.Apply(plan,warhead); Exotic.ApplyLithium(plan,exotic.Units,exotic.MassKg);
+                    }
                     else
                     {
                         // (a tank of Graviolium alone has nothing to burn: the blue electric flash; with fuel in it, its fire)

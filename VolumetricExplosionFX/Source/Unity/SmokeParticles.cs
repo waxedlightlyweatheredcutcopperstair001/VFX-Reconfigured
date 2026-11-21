@@ -113,6 +113,10 @@ namespace VolumetricExplosionFX.Rendering
         internal ResiduePlan Plan { get { return plan; } }
         internal bool Sheets;
         internal bool Volume;
+        // VFX Reconfigured: burning lithium: white-hot flames with a crimson tint instead of orange.
+        bool lithium;
+        Color Tongue(float r,float a) { return lithium?new Color(1,0.42f+0.3f*r,0.52f+0.2f*r,a):new Color(1,0.62f+0.25f*r,0.24f,a); }
+        Color Sheet(float a) { return lithium?new Color(1,0.62f,0.72f,a):new Color(1,1,1,a); }
         // 1.1: the rising cloud of the blast above draws the fire's smoke up into it (m/s added to the climb):
         // a column joining the cloud, not a cloud floating apart over a separate puff of smoke.
         internal float Updraft;
@@ -120,6 +124,7 @@ namespace VolumetricExplosionFX.Rendering
         {
             stripLength=0;
             plan=residue; rnd=new SplitRandom(seed^0x5EEDu); flames=0; smoke=0; floor=groundY;
+            lithium=fx.Exotic==ExoticKind.Lithium;
             Active=residue.HasFire;
             double soot=Numbers.Clamp(fx.Soot,0,1);
             tint=new Color((float)Numbers.Clamp(fx.SmokeR*(1.1-0.25*soot),0.1,1),(float)Numbers.Clamp(fx.SmokeG*(1.1-0.25*soot),0.1,1),(float)Numbers.Clamp(fx.SmokeB*(1.1-0.25*soot),0.1,1),1);
@@ -158,9 +163,9 @@ namespace VolumetricExplosionFX.Rendering
                 float r=radius*(1+0.6f*Mathf.Max(0,Vector2.Dot(dir,windDir))*Mathf.Min(windSpeed/3,1))*(0.92f+0.16f*(float)rnd.Next());
                 var spot=new Vector3(dir.x*r,floor,dir.y*r);
                 float tall=1.5f+1.5f*(float)rnd.Next();
-                if(Sheets) SmokeParticles.Emit(tongues,spot,drift*0.1f,tall,1.0f+0.8f*(float)rnd.Next(),new Color(1,1,1,0.6f*fade),0);
+                if(Sheets) SmokeParticles.Emit(tongues,spot,drift*0.1f,tall,1.0f+0.8f*(float)rnd.Next(),Sheet(0.6f*fade),0);
                 else SmokeParticles.Emit(tongues,spot+Vector3.up*tall*0.3f,Vector3.up*tall*0.8f+drift*0.2f,tall*0.6f,0.6f+0.4f*(float)rnd.Next(),
-                    new Color(1,0.62f+0.25f*(float)rnd.Next(),0.24f,0.7f*fade),(float)(rnd.Next()*360));
+                    Tongue((float)rnd.Next(),0.7f*fade),(float)(rnd.Next()*360));
                 if(fire!=null&&rnd.Next()<0.55)
                     SmokeParticles.Emit(fire,spot+Vector3.up*tall,Vector3.up*(1.2f+0.8f*(float)rnd.Next())+drift*0.6f,tall*2.8f,4+3*(float)rnd.Next(),
                         new Color(0.74f,0.73f,0.7f,0.55f*fade),(float)(rnd.Next()*360));
@@ -202,7 +207,7 @@ namespace VolumetricExplosionFX.Rendering
                         float tall=height*(0.6f+0.45f*(float)rnd.Next())*middle;
                         var spot=new Vector3((float)(Math.Cos(ka)*kr),floor,(float)(Math.Sin(ka)*kr));
                         var lean=new Vector3(-spot.x,0,-spot.z)*0.05f+drift*0.1f;
-                        SmokeParticles.Emit(tongues,spot,lean,tall,1.6f+1.2f*(float)rnd.Next(),new Color(1,1,1,0.75f+0.25f*level),0);
+                        SmokeParticles.Emit(tongues,spot,lean,tall,1.6f+1.2f*(float)rnd.Next(),Sheet(0.75f+0.25f*level),0);
                     }
                     continue;
                 }
@@ -220,7 +225,7 @@ namespace VolumetricExplosionFX.Rendering
                     var offset=new Vector3((float)(rnd.Next()-0.5),0,(float)(rnd.Next()-0.5))*size*0.4f;
                     var tv=new Vector3((float)(rnd.Next()-0.5)*0.1f*rise,height/tl*(0.6f+0.5f*(float)rnd.Next())*surge*0.55f,(float)(rnd.Next()-0.5)*0.1f*rise)+inward*0.5f+drift*0.2f;
                     SmokeParticles.Emit(tongues,at+offset+Vector3.up*size*0.1f,tv,D*(0.28f+0.22f*(float)rnd.Next())*(0.6f+0.4f*level),tl,
-                        new Color(1,0.6f+0.28f*(float)rnd.Next(),0.24f,0.65f+0.3f*level),(float)(rnd.Next()*360));
+                        Tongue((float)rnd.Next(),0.65f+0.3f*level),(float)(rnd.Next()*360));
                 }
             }
             CreepTick(age,dt,fire,tongues);

@@ -1287,6 +1287,34 @@ class Program
                 Check(gp.Warhead==WarheadKind.Emp&&gp.ElectricFraction>=1&&gp.Exotic==ExoticKind.Graviolium&&gp.Lifetime>=lensD,
                     "A Graviolium tank's own blast is a blue electric flash that lasts as long as its lens");
             }
+            {
+                // VFX Reconfigured 0.5: lithium, nuclear salt water, fission pulse units, venting batteries.
+                ExoticInfo xLi=Exotic.Of(Part(1.225,new[]{new ResourceSnapshot("Lithium",880,880,470)})),
+                    xNsw=Exotic.Of(Part(1.225,new[]{new ResourceSnapshot("NuclearSaltWater",16000,16000,16800)})),
+                    xPulse=Exotic.Of(Part(1.225,new[]{new ResourceSnapshot("FissionPulses",1400,1400,70000),new ResourceSnapshot("Lithium",10,10,5)})),
+                    xBoth=Exotic.Of(Part(1.225,new[]{new ResourceSnapshot("Antimatter",1,1,0),new ResourceSnapshot("FissionPulses",1400,1400,70000)}));
+                Check(xLi.Kind==ExoticKind.Lithium&&Math.Abs(xLi.MassKg-470)<1e-6&&xNsw.Kind==ExoticKind.SaltWater&&xPulse.Kind==ExoticKind.PulseUnits&&xBoth.Kind==ExoticKind.Antimatter,
+                    "Lithium, nuclear salt water and fission pulse units are found by name; the most violent fuel in a part decides");
+                var liPlan=Plan(Part(1.225,new[]{new ResourceSnapshot("Lithium",880,880,470)})); Warhead.Apply(liPlan,Exotic.LithiumWarhead(470)); Exotic.ApplyLithium(liPlan,880,470);
+                Check(liPlan.Warhead==WarheadKind.Incendiary&&Warhead.LeavesFire(liPlan.Warhead)&&liPlan.PartKind==PartKind.LiquidTank&&liPlan.Soot<0.05&&liPlan.SmokeR>0.9&&liPlan.WhiteFlame>=1&&
+                    liPlan.Sparks!=null&&liPlan.Sparks.Jets==0&&liPlan.Sparks.Cool.X>liPlan.Sparks.Cool.Y&&Exotic.LithiumBurnSeconds(18800)>Exotic.LithiumBurnSeconds(50)&&Exotic.LithiumBurnSeconds(1e9)<=30,
+                    "Lithium burns as a white-crimson metal fire: white smoke, no soot, a fountain of molten droplets, a long burn by mass, a fire left where it lands");
+                var nswPlan=Plan(Part(1.225,new[]{new ResourceSnapshot("NuclearSaltWater",16000,16000,16800)})); Warhead.Apply(nswPlan,Exotic.SaltWaterWarhead(16800)); Exotic.ApplySaltWater(nswPlan,16000,16800);
+                Check(nswPlan.VaporFraction>=0.85&&nswPlan.Soot==0&&nswPlan.SmokeB>0.9&&Exotic.SaltWaterFlash(0)>1.9&&Exotic.SaltWaterFlash(0.35)<0.1&&Exotic.SaltWaterFlash(0.46)>0.7&&Exotic.SaltWaterFlash(Exotic.SaltWaterEnd)<0.01,
+                    "Nuclear salt water: blue criticality flashes repeating as the solution falls back, then a white steam blast");
+                Check(Exotic.PulseCount(1400)==3&&Exotic.PulseCount(2800)==4&&Exotic.PulseCount(5600)==5&&Exotic.PulseCount(1)==1&&Exotic.PulseCount(1e9)==7&&
+                    Exotic.PulseWarhead(1400).Kind==WarheadKind.Nuke&&Math.Abs(Exotic.PulseWarhead(1400).TntKg-3e6)<1,
+                    "A magazine of fission pulse units goes off as a chain of 1 kt units: 3 for FFT's smallest, up to 7");
+                var pTimes=new double[8]; var offs=new Vec3[8]; int pn;
+                Exotic.PulseSchedule(5600,42,pTimes,offs,out pn);
+                bool ordered=true; for(int i=1;i<pn;i++) ordered&=pTimes[i]>pTimes[i-1]+0.1&&pTimes[i]<pTimes[i-1]+0.41;
+                Check(pn==5&&pTimes[0]==0&&offs[0].X==0&&offs[0].Z==0&&ordered&&Exotic.PulseFlash(0)>2.9&&Exotic.PulseFlash(1)<0.2,
+                    "The chain's units go off one after another, a fifth of a second or so apart, around the first");
+                var batPlan=Plan(Part(1.225,new[]{new ResourceSnapshot("ElectricCharge",4000,4000,0)}));
+                var batSmall=Exotic.BatterySparks(100); var batBig=Exotic.BatterySparks(20000);
+                Check(batPlan.PartKind==PartKind.Battery&&batPlan.Sparks!=null&&batPlan.Sparks.Jets>=1&&Exotic.BatterySparks(10)==null&&batSmall.Jets==1&&batBig.Jets>batSmall.Jets&&batBig.Seconds>batSmall.Seconds&&batBig.Seconds<=7,
+                    "A battery vents its cells in jets of sparks, one after another: more jets and longer for a bigger charge");
+            }
             Console.WriteLine("Verified assertions: "+count);
         }
         catch(Exception ex) { Console.Error.WriteLine("FAIL "+ex.Message); Environment.Exit(1); }

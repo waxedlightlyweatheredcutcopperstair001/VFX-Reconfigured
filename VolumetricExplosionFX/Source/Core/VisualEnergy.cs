@@ -34,7 +34,9 @@ namespace VolumetricExplosionFX.Core
         // Artistic profile; null renders the 1.0 look.
         public LookProfile Look;
         // VFX Reconfigured: an exotic fuel in the part (Exotic) and how many units of it.
-        public ExoticKind Exotic; public double ExoticUnits;
+        public ExoticKind Exotic; public double ExoticUnits, ExoticKg;
+        // VFX Reconfigured: a stream of sparks, flames and smoke after the blast (battery venting, burning lithium).
+        public SparkSpec Sparks;
     }
     public static class VisualEnergy
     {
@@ -90,7 +92,9 @@ namespace VolumetricExplosionFX.Core
             sr+=(0.6-sr)*brown; sg+=(0.36-sg)*brown; sb+=(0.18-sb)*brown;
             Vec3 dust=BodyLook.Dust(p.Environment!=null?p.Environment.Body:null);
             return new FxPlan { DustR=dust.X, DustG=dust.Y, DustB=dust.Z,
-                PartKind=partKind, FromPart=true, Contents=contents, Kind=e.Kind, Atmosphere=atmosphere, ImpactSpeed=speed,
+                PartKind=partKind, FromPart=true, Contents=contents,
+                Kind=e.Kind, Atmosphere=atmosphere, ImpactSpeed=speed,
+                Sparks=partKind==PartKind.Battery?Exotic.BatterySparks(electric):null,   // (VFX Reconfigured: venting cells)
                 KineticJoules=kinetic, VisualEnergyScore=score,
                 Hydrogen=Numbers.Clamp(hydrogenMass/fuelTotal,0,1), Mono=Numbers.Clamp(monoMass/fuelTotal,0,1), Brown=Numbers.Clamp(brown,0,1), OreKg=oreMass,
                 Fill=room>0?Numbers.Clamp(held/room,0,1):0,
