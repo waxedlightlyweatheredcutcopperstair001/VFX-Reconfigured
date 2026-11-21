@@ -55,6 +55,9 @@ and `dotnet run --project VolumetricExplosionFX/Tests/VolumetricExplosionFX.Test
   faint smoke around fireballs; `HeroVolume.shader` `_Reconf`: glow at the plume's top and edges.
 - `CombatBridge.WillDetonate`: BDArmory warheads only explode in full when BDArmory sets them off.
 - Nuclear air bursts: `BlastShape` (2.5 fireball radii), `VolumeEvolution.SimLobe` (cap cut), `NukeCloud` (dust ring).
+- Exotic fuels: `Source/Core/Exotic.cs` (detection by resource name, yields, glow and lens timing),
+  `Source/Rendering/ExoticFx.cs`, `Source/Rendering/LensPass.cs` (a command buffer kept last at AfterForwardAlpha),
+  `ExoticGlow.shader`, `GravLens.shader`.
 - VGFX: jet engines (`EngineSampler.IsAirBreathing`) and launch-pad latching; `Physics.cfg` `jetDustScale`,
   `jetCloudRadiusScale`.
 

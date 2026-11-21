@@ -33,6 +33,8 @@ namespace VolumetricExplosionFX.Core
         public GroundKind Surface;
         // Artistic profile; null renders the 1.0 look.
         public LookProfile Look;
+        // VFX Reconfigured: an exotic fuel in the part (Exotic) and how many units of it.
+        public ExoticKind Exotic; public double ExoticUnits;
     }
     public static class VisualEnergy
     {

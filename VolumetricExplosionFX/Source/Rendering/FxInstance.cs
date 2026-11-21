@@ -151,9 +151,11 @@ namespace VolumetricExplosionFX.Rendering
         internal double CoreRadius { get { return plan==null?0:Math.Max(2,plan.Radius*0.5); } }   // inside the fireball itself
         internal double CoverRadius { get { return plan==null?0:ReservedVolume?VolumeEvolution.DomeRadius(plan)*1.5:Math.Max(4,plan.Radius*1.5); } }
         internal void ReleaseVolume() { if(volume!=null) volume.Retire(); }
+        readonly ExoticFx exotic;   // VFX Reconfigured: antimatter and Graviolium (glow, gravitational lens)
         internal void ShowFor(Camera cam,LowResVolumes lowRes=null)
         {
             if(!active) return;
+            exotic.ShowFor(cam);
             if(volume!=null) volume.ShowFor(cam,lowRes);
             if(fireVolume!=null) fireVolume.Show(CameraRig.IsFlight(cam)&&(fireTarget==null||cam==fireTarget),lowRes);
             if(splashVolume!=null) splashVolume.Show(cam,lowRes);
@@ -206,6 +208,7 @@ namespace VolumetricExplosionFX.Rendering
             var lightObject=new GameObject("core light"); lightObject.layer=EffectLayer.Value; lightObject.transform.SetParent(Root.transform,false);
             flash=lightObject.AddComponent<Light>(); flash.type=LightType.Point; flash.shadows=LightShadows.None; flash.enabled=false;
             if(volumes.Material!=null) volume=new HeroVolume(Root.transform,volumes);
+            exotic=new ExoticFx(Root.transform,volumes);
             if(volumes.FireMaterial!=null&&volumes.Cube!=null) fireVolume=new FireVolumeRenderer(Root.transform,volumes.Cube,volumes.FireMaterial,EffectLayer.Value);
             if(volumes.SplashMaterial!=null&&volumes.Cube!=null) splashVolume=new SplashVolume(Root.transform,volumes.Cube,volumes.SplashMaterial);
             if(volumes.SmokeFire!=null)
@@ -417,6 +420,8 @@ namespace VolumetricExplosionFX.Rendering
             // A nuclear flash lights the land for kilometres around.
             if(plan.Warhead==WarheadKind.Nuke&&plan.Look!=null&&plan.Look.Modern) flash.range=Mathf.Clamp((float)layout.RadiusMeters*10,800,12000);
             flash.intensity=dome?(float)VolumeEvolution.LightIntensity(volume.State):3*(float)plan.FireFraction*lightScale;
+            exotic.Begin(plan,VolumeEvolution.FireballRadius(plan),air);
+            if(exotic.Active) lit=light&&settings.Lighting;   // (Graviolium's flash has no fire of its own)
             LightWanted=lit?flash.intensity:0;
         }
         // Runs the particle start-up once, out of sight, while the flight scene loads: Unity sets up its particle
@@ -623,6 +628,15 @@ namespace VolumetricExplosionFX.Rendering
             else want=(float)ExplosionLight.FallbackFlash(plan.FireFraction,age)*lightScale;
             // By day a fireball tints the sunlit ground around it only a little (it lit it up like a lamp); at night fully.
             if(plan.Look!=null&&plan.Look.Modern&&plan.Warhead!=WarheadKind.Nuke) want*=1-0.4f*FxPool.Daylight;   // (a nuclear flash outshines the sun)
+            exotic.Tick(age);
+            if(exotic.LightBoost>0.01f)
+            {
+                // The exotic glow lights the land: violet-white (antimatter) or electric blue (Graviolium).
+                float share=exotic.LightBoost/(exotic.LightBoost+want+1e-3f);
+                flash.color=Color.Lerp(flash.color,exotic.LightColour,share);
+                flash.range=Mathf.Max(flash.range,Mathf.Min(exotic.LightRange,12000));
+                want=Mathf.Max(want,exotic.LightBoost);
+            }
             flash.intensity=want;
             if(splashVolume!=null)
             {
@@ -636,12 +650,13 @@ namespace VolumetricExplosionFX.Rendering
             FireGlow=Mathf.Max(glow,pool)*flicker;
             FirePosition=glow>=pool?flash.transform.position:Root.transform.TransformPoint(Vector3.up*(residue.HasFire?(float)residue.FlameHeight*0.35f:1));
             FireRange=glow>=pool?Mathf.Max(flash.range,10):Mathf.Max((float)residue.FireRadius*8+5,10);
-            bool alive=particles.Alive||(poolFire!=null&&(poolFire.IsAlive()||column.IsAlive()||tongues.IsAlive()))||FireShown||HasSplash;
+            bool alive=particles.Alive||(poolFire!=null&&(poolFire.IsAlive()||column.IsAlive()||tongues.IsAlive()))||FireShown||HasSplash||exotic.Alive(age);
             bool refracting=volume!=null&&volume.Distorting;
             double residueEnd=Math.Max(residue.HasFire?residue.SmokeSeconds:0,hasScorch?residue.ScorchSeconds:0);
             bool lingering=age<residueEnd;
             double limit=Math.Max(Math.Max(VolumeEvolution.RealDuration(plan),groundFireEnd)+4,Math.Max(residueEnd+14,particles.Horizon));
             if(splashVolume!=null) limit=Math.Max(limit,splashVolume.Duration+1);
+            if(exotic.Active) limit=Math.Max(limit,Exotic.LensEnd(plan.ExoticUnits)+1);
             if(age>limit||(!HasVolume&&!refracting&&!alive&&!particles.Pending&&groundFire<=0&&!lingering))
             { Clear(); return false; }
             return true;
@@ -744,6 +759,7 @@ namespace VolumetricExplosionFX.Rendering
             residueEmitter.Stop(); residue=default(ResiduePlan); FireGlow=0; nukeShadow=false; if(nukeShade!=null) nukeShade.enabled=false;
             if(fireVolume!=null) fireVolume.Clear(); fireTarget=null;
             if(splashVolume!=null) splashVolume.Clear();
+            if(exotic!=null) exotic.Clear();
             if(scorch!=null) scorch.enabled=false; hasScorch=false;
             if(scar!=null) scar.enabled=false; scarBuilt=0;
             if(shadow!=null) shadow.enabled=false; hasShadow=false;

@@ -29,10 +29,12 @@ namespace VolumetricExplosionFX.Core
         /// </summary>
         public static double GlowSeconds(FxPlan plan)
         {
+            // (Antimatter: its energy heats a much larger volume of air, less hot: the core glows half as long.)
+            double exotic = plan != null && plan.Exotic == ExoticKind.Antimatter ? 0.5 : 1;
             if (plan != null && plan.Warhead == WarheadKind.Nuke)
-                return S.NukeGlowSeconds * Numbers.Clamp(Math.Pow(Math.Max(plan.WarheadTnt / 1e6, 0.001) / 20, 0.4), 0.4, 5);
+                return exotic * S.NukeGlowSeconds * Numbers.Clamp(Math.Pow(Math.Max(plan.WarheadTnt / 1e6, 0.001) / 20, 0.4), 0.4, 5);
             double radius = plan != null ? VolumeEvolution.FireballRadius(plan) : 12;
-            return S.GlowSeconds * Numbers.Clamp(Math.Pow(Math.Max(radius, 0.1) / 12, 0.6), 0.15, 3);
+            return exotic * S.GlowSeconds * Numbers.Clamp(Math.Pow(Math.Max(radius, 0.1) / 12, 0.6), 0.15, 3);
         }
         public static double Brightness => S.Brightness;
         public static bool SmokeShadows => S.SmokeShadows;

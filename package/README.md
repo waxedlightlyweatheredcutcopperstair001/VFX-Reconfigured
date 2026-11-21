@@ -1,4 +1,4 @@
-# Volumetric FX Reconfigured 0.3.0
+# Volumetric FX Reconfigured 0.4.0
 
 Volumetric explosions, fire, smoke and wreckage, and volumetric engine dust and steam, for Kerbal Space Program
 1.12.5, in one mod. Based on **Volumetric Explosion FX** 1.1.1 and **Volumetric Ground FX** 1.1.0 by Warnix (both MIT),
@@ -31,12 +31,21 @@ Windows (DirectX 11). One toolbar button opens the settings, in flight and at th
 
 - Distant explosions are veiled by the atmosphere like the land around them (Atmospheric haze; works with Scatterer).
 
+**Exotic fuels** (only with the mods that add them; any tank holding them)
+- Antimatter (Far Future Technologies; KSP Interstellar uses the same name): drawn at a tenth of FFT's yield (its big
+  tanks: about 10 to 260 kt). The annihilation's gamma rays light a huge, soft-edged sphere of air in a violet-blue glow
+  round a white-hot core; then a pale, clean cloud (no soil, little smoke) that rises and fades. Larger and fainter in
+  thin air; only a flash in vacuum.
+- Graviolium (Blueshift): an electric-blue flash, then a gravitational lens for 3 to 6 s (15 to 600 m across with the
+  tank's size): the world behind bent into an Einstein ring and arcs round a small black core with a blue rim, a ring of
+  stretch-and-squeeze rippling outward, and a collapse with a last blue burst.
+
 **Engine dust**
 - The big billowing launch plumes only appear on launch pads (not a plane on the runway).
 - Jet engines raise fainter, more transparent dust instead of rocket plumes.
 
 **Settings** (toolbar button, Simple theme by default): *Explosion look* (speed, brightness, glow time, smoke shadows, smoke half-life, longest smoke, smoke opacity, glow
-at the plume's edges, nuclear glow and smoke, explosion and particle limits) and *Ground effects* (the engine dust
+at the plume's edges, nuclear glow and smoke, exotic fuel explosions, explosion and particle limits) and *Ground effects* (the engine dust
 settings), as well as the original pages.
 
 ## Licence

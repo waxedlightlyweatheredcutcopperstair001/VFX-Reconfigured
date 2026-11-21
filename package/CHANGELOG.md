@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.4.0
+- Exotic fuel explosions (setting: Explosion look > Exotic fuel explosions), for any part holding the fuel; nothing
+  changes without the mods that add it.
+  - Antimatter (Far Future Technologies): drawn at a tenth of FFT's 36 GJ per unit (its tanks: about 10 kt to 260 kt;
+    small amounts a bomb-sized blast). A violet-blue glow of ionised air several fireballs wide (wider and fainter in
+    thin air, only a flash in vacuum) round a white-hot core that glows half as long as a nuclear one, lighting the land
+    violet-white; a clean, pale lavender-to-white cloud with no soil drawn up.
+  - Graviolium (Blueshift): an electric-blue flash and light, then a gravitational lens (15 m to 600 m with the amount,
+    3 to 6 s): Einstein ring and arcs, a black core with a blue rim, a gravitational-wave ring rippling outward, then a
+    collapse with a second ring and a last blue burst. The lens bends everything behind it, clouds and explosions too.
+  - Visual only: no damage is added.
+
 ## 0.3.3
 - Explosions inside a cloud layer are now hidden by it in part, by how deep in the layer they are: seen from above, a
   nuclear stem standing in the cloud deck disappears into it while the cap above shows. Before, only an explosion

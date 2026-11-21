@@ -560,6 +560,13 @@ namespace VolumetricExplosionFX.Core
             // light grey in dry air, and dusty grey-brown when the ground was sucked into it.
             double t=Smooth(1.5*tf,9*tf,age);   // (Trinity stayed reddish-brown for half a minute and more)
             double r1,g1,b1;
+            // VFX Reconfigured: antimatter's cloud is clean hot air (no fission products, no soil drawn up): a pale lavender
+            // that turns white.
+            if(plan.Exotic==ExoticKind.Antimatter)
+            {
+                s.SmokeR=0.74+(0.9-0.74)*t; s.SmokeG=0.7+(0.9-0.7)*t; s.SmokeB=0.82+(0.93-0.82)*t;
+                return;
+            }
             // (The cap of a ground burst is the fireball's own condensing gas with the dust in it: light grey-brown in
             // sunlight whatever the ground; the stem under it carries the ground's colour. It was a dark olive over grass.)
             if(kind==NukeKind.Surface) { r1=0.35*plan.DustR+0.42; g1=0.35*plan.DustG+0.38; b1=0.35*plan.DustB+0.34; }

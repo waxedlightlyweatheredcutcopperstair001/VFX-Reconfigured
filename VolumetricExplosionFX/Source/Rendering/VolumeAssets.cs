@@ -15,6 +15,8 @@ namespace VolumetricExplosionFX.Rendering
         internal Material SmokeFire, SmokeCloud, Scorch, TrailMaterial, TrailGlow, Flame, Shadow, GroundWave;
         internal Material FireMaterial;
         internal Material NukeMaterial;   // 1.1: the nuclear cloud's own renderer (NukeVolume)
+        internal Material ExoticGlowMaterial, LensMaterial;   // VFX Reconfigured: antimatter/Graviolium glow, gravitational lens (Exotic)
+        Shader ownedExoticGlow, ownedLens;
         internal Material NukeGlareMaterial;   // 1.1: the glare of a nuclear fireball, anchored in the world (NukeGlare)
         internal Material SplashMaterial;   // 1.1: a water impact's splash as a volume (SplashVolume)
         internal Shader Fragment;
@@ -115,6 +117,10 @@ namespace VolumetricExplosionFX.Rendering
                 if(distort!=null) { DistortMaterial=new Material(distort); ownedDistort=distort; }
                 Shader composite=Supported(bundle,"Assets/Shaders/Composite.shader");
                 if(composite!=null) { CompositeMaterial=new Material(composite); ownedComposite=composite; }
+                Shader exoticGlow=Supported(bundle,"Assets/Shaders/ExoticGlow.shader");
+                if(exoticGlow!=null) { ownedExoticGlow=exoticGlow; ExoticGlowMaterial=new Material(exoticGlow); }
+                Shader lens=Supported(bundle,"Assets/Shaders/GravLens.shader");
+                if(lens!=null) { ownedLens=lens; LensMaterial=new Material(lens); }
                 Shader probe=Supported(bundle,"Assets/Shaders/CloudProbe.shader");
                 if(probe!=null) { CloudProbeMaterial=new Material(probe); ownedProbe=probe; }
                 Shader nuke=Supported(bundle,"Assets/Shaders/NukeVolume.shader");
@@ -152,11 +158,11 @@ namespace VolumetricExplosionFX.Rendering
                 Cube.RecalculateBounds();
                 Warmup();
                 Status="shock dome / "+platform+" / "+api+(FlareMaterial!=null?" + glare":" (no glare)")+(DistortMaterial!=null?" + refraction":" (no refraction)")+(FireMaterial!=null?" + 3D fires":"")+(VolumeEvolution.UseSim?" + simulated fireballs ("+FireSim.GroundLoaded+" ground, "+FireSim.AirLoaded+" air shapes)":"")+(NukeMaterial!=null?" + nuclear clouds":"")+(SplashMaterial!=null?" + water splashes":"")+
-                    (Particle!=null?" + original sprites":"")+extras+" (runtime visual test required)";
+                    (Particle!=null?" + original sprites":"")+extras+(ExoticGlowMaterial!=null?" + exotic glow":"")+(LensMaterial!=null?" + gravitational lens":"")+" (runtime visual test required)";
             }
             catch(Exception ex)
             {
-                Dispose();Material=null;SimMaterial=null;Cube=null;FlareMaterial=null;NukeGlareMaterial=null;DistortMaterial=null;CompositeMaterial=null;FireMaterial=null;NukeMaterial=null;SplashMaterial=null;Quad=null;Particle=null;Debris=null;
+                Dispose();ExoticGlowMaterial=null;LensMaterial=null;Material=null;SimMaterial=null;Cube=null;FlareMaterial=null;NukeGlareMaterial=null;DistortMaterial=null;CompositeMaterial=null;FireMaterial=null;NukeMaterial=null;SplashMaterial=null;Quad=null;Particle=null;Debris=null;
                 SmokeFire=null;SmokeCloud=null;Scorch=null;TrailMaterial=null;TrailGlow=null;Flame=null;Fragment=null;blueNoise=null;noise=null;smokeA=null;smokeB=null;Status="bundle load failed; particles";
                 Debug.LogWarning("[VEFX] Volume fallback: "+ex.GetType().Name);
             }
@@ -246,6 +252,8 @@ namespace VolumetricExplosionFX.Rendering
         {
             if(Material!=null) UnityEngine.Object.Destroy(Material); if(SimMaterial!=null) UnityEngine.Object.Destroy(SimMaterial); if(Cube!=null) UnityEngine.Object.Destroy(Cube);
             if(FlareMaterial!=null) UnityEngine.Object.Destroy(FlareMaterial); if(Quad!=null) UnityEngine.Object.Destroy(Quad);
+            if(ExoticGlowMaterial!=null) UnityEngine.Object.Destroy(ExoticGlowMaterial); if(ownedExoticGlow!=null) UnityEngine.Object.Destroy(ownedExoticGlow);
+            if(LensMaterial!=null) UnityEngine.Object.Destroy(LensMaterial); if(ownedLens!=null) UnityEngine.Object.Destroy(ownedLens);
             if(NukeGlareMaterial!=null) UnityEngine.Object.Destroy(NukeGlareMaterial); if(ownedGlare!=null) UnityEngine.Object.Destroy(ownedGlare);
             if(DistortMaterial!=null) UnityEngine.Object.Destroy(DistortMaterial); if(ownedDistort!=null) UnityEngine.Object.Destroy(ownedDistort);
             if(CompositeMaterial!=null) UnityEngine.Object.Destroy(CompositeMaterial); if(ownedComposite!=null) UnityEngine.Object.Destroy(ownedComposite);

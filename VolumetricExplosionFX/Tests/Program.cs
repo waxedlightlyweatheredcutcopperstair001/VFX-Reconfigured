@@ -1258,6 +1258,35 @@ class Program
                 Check(Reconfig.GlowSeconds(rcSmall)<0.8&&Reconfig.GlowSeconds(rcBig)>2.5&&Reconfig.GlowSeconds(rcMegaton)>45&&Reconfig.GlowSeconds(rcMegaton)<70,
                     "Small explosions flash briefly, big ones glow longer; a megaton fireball glows for about a minute");
             }
+            {
+                // VFX Reconfigured: exotic fuels, found by resource name in any part.
+                var am=Exotic.Of(Part(1.225,new[]{R("LiquidFuel",100,20),new ResourceSnapshot("Antimatter",300000,300000,3000)}));
+                var gr=Exotic.Of(Part(1.225,new[]{new ResourceSnapshot("Graviolium",720,720,0)}));
+                var none=Exotic.Of(Part(1.225,new[]{R("LiquidFuel",100,20),new ResourceSnapshot("Antimatter",0,10,0)}));
+                Check(am.Kind==ExoticKind.Antimatter&&Math.Abs(am.Units-300000)<1e-6&&gr.Kind==ExoticKind.Graviolium&&none.Kind==ExoticKind.None,
+                    "Antimatter and Graviolium are found in any part by resource name; an empty antimatter tank is ordinary");
+                var amBig=Exotic.AntimatterWarhead(300000); var amRing=Exotic.AntimatterWarhead(0.05); var amFactory=Exotic.AntimatterWarhead(10);
+                Check(amBig.Kind==WarheadKind.Nuke&&amBig.TntKg>2.4e8&&amBig.TntKg<2.8e8&&amRing.Kind!=WarheadKind.Nuke&&amRing.TntKg>30&&amRing.TntKg<55&&amFactory.Kind==WarheadKind.Bomb,
+                    "Antimatter is drawn at a tenth of FFT's 36 GJ per unit: the biggest tank about 260 kt, the tiny ring a small blast");
+                var nukePlain=new FxPlan{ Atmosphere=1, Look=LookProfile.Default(LookKind.Tank) }; Warhead.Apply(nukePlain,amBig);
+                var nukeAm=new FxPlan{ Atmosphere=1, Look=LookProfile.Default(LookKind.Tank), Kind=EventKind.GroundImpact }; Warhead.Apply(nukeAm,amBig); Exotic.ApplyAntimatter(nukeAm,300000);
+                Check(nukeAm.Exotic==ExoticKind.Antimatter&&nukeAm.OreKg==0&&nukeAm.Soot<=0.04&&nukeAm.SmokeB>nukeAm.SmokeR&&
+                    Math.Abs(Reconfig.GlowSeconds(nukeAm)-0.5*Reconfig.GlowSeconds(nukePlain))<1e-6,
+                    "An antimatter blast is clean (no soil, little soot, pale cloud) and its core glows half as long");
+                Check(Exotic.AntimatterGlowScale(1)>=3.5&&Exotic.AntimatterGlowScale(0.1)>Exotic.AntimatterGlowScale(1)&&Exotic.AntimatterGlowScale(0)<3&&
+                    Exotic.AntimatterGlow(0)>1.2&&Exotic.AntimatterGlow(1)<0.15,
+                    "The ionised-air glow is several fireballs wide, wider in thin air, only a flash in vacuum, and fades in about a second");
+                Check(Math.Abs(Exotic.LensRadius(6.25)-15)<1e-6&&Exotic.LensRadius(10880)>580&&Exotic.LensRadius(10880)<=600&&
+                    Math.Abs(Exotic.LensDuration(6.25)-3)<1e-6&&Math.Abs(Exotic.LensDuration(10880)-6)<1e-3,
+                    "A Graviolium lens reaches 15 m (smallest tank) to 600 m (biggest) and lasts 3 to 6 s");
+                double lensD=Exotic.LensDuration(720); var l0=Exotic.Lens(720,0); var l1=Exotic.Lens(720,1); var lc=Exotic.Lens(720,lensD+0.05); var lend=Exotic.Lens(720,lensD+2);
+                Check(l0.Alive&&l0.Flash>0.9&&l0.Einstein<1e-6&&Math.Abs(l1.Einstein-0.4*l1.Radius)<1e-6&&l1.Core<l1.Einstein&&
+                    lc.Einstein<0.05*l1.Einstein&&lc.Flash>1&&lc.RingAmp>0.9&&lc.RingRadius<0.5*l1.Radius&&!lend.Alive,
+                    "The lens flashes, forms, holds, then collapses with a burst and a second wave ring");
+                var gp=Plan(Part(1.225,new[]{new ResourceSnapshot("Graviolium",720,720,0)})); Warhead.Apply(gp,Exotic.GravioliumWarhead(720)); Exotic.ApplyGraviolium(gp,720);
+                Check(gp.Warhead==WarheadKind.Emp&&gp.ElectricFraction>=1&&gp.Exotic==ExoticKind.Graviolium&&gp.Lifetime>=lensD,
+                    "A Graviolium tank's own blast is a blue electric flash that lasts as long as its lens");
+            }
             Console.WriteLine("Verified assertions: "+count);
         }
         catch(Exception ex) { Console.Error.WriteLine("FAIL "+ex.Message); Environment.Exit(1); }

@@ -190,12 +190,30 @@ namespace VolumetricExplosionFX.Ksp
                     duds++;
                 }
                 if(armed) { Warhead.Apply(plan,warhead); warheadParts++; }
+                // VFX Reconfigured: a tank of antimatter or Graviolium (any part holding them) gets its own explosion,
+                // spawned like a warhead's (an armed nuclear warhead keeps its own).
+                ExoticInfo exotic=settings.ExoticFuels?Exotic.Of(s):default(ExoticInfo);
+                if(exotic.Kind!=ExoticKind.None&&!(armed&&warhead.Kind==WarheadKind.Nuke))
+                {
+                    if(exotic.Kind==ExoticKind.Antimatter)
+                    {
+                        warhead=Exotic.AntimatterWarhead(exotic.Units); Warhead.Apply(plan,warhead); Exotic.ApplyAntimatter(plan,exotic.Units);
+                    }
+                    else
+                    {
+                        // (a tank of Graviolium alone has nothing to burn: the blue electric flash; with fuel in it, its fire)
+                        if(!armed&&plan.BurnableKg<1) { warhead=Exotic.GravioliumWarhead(exotic.Units); Warhead.Apply(plan,warhead); }
+                        Exotic.ApplyGraviolium(plan,exotic.Units);
+                    }
+                    armed=true; exoticParts++;
+                    if(log!=null) log.WriteLine("Exotic: "+exotic.Kind+" "+exotic.Units.ToString("0.###",System.Globalization.CultureInfo.InvariantCulture)+" units in "+s.Name);
+                }
                 bool nuclear=armed&&warhead.Kind==WarheadKind.Nuke;
                 if(nuclear&&(pool.NuclearNear(where,(float)Warhead.SameNuke(VolumeEvolution.FireballRadius(plan)),10)||PendingNuke(where,Warhead.SameNuke(VolumeEvolution.FireballRadius(plan)))))
                 {
                     owner=VisualReplacementWindows.Covered; absorbed++;   // (its detonation was drawn already)
                 }
-                else if(pool.Absorb(where,SnapshotReader.Vector(e.Origin),plan.VisualEnergyScore,false,nuclear)||armed&&pool.Covers(where,plan.VisualEnergyScore,true,nuclear))
+                else if(exotic.Kind==ExoticKind.None&&(pool.Absorb(where,SnapshotReader.Vector(e.Origin),plan.VisualEnergyScore,false,nuclear)||armed&&pool.Covers(where,plan.VisualEnergyScore,true,nuclear)))
                 {
                     owner=VisualReplacementWindows.Covered; absorbed++;   // (a charge already drawn by its detonation: one explosion)
                 }
@@ -406,7 +424,7 @@ namespace VolumetricExplosionFX.Ksp
         // explosion visuals are given back the same frame: every detonation shows, one way or the other.
         CombatBridge combat;
         uint warheadCount;
-        int combatDrawn, combatGivenBack, combatHits, warheadParts, duds;
+        int combatDrawn, combatGivenBack, combatHits, warheadParts, duds, exoticParts;
         void Detonate(CombatBridge.Detonation d)
         {
             string outcome=null; bool drawn=false;
@@ -832,7 +850,7 @@ namespace VolumetricExplosionFX.Ksp
             string summary=null;
             if(pool!=null) { try { summary=Summary(false); probe.Flush(settings.Quality.ToString()); } catch(Exception ex) { Fail(ex); } }
             if(stock!=null) { try { stock.Dispose(); } catch(Exception ex) { Fail(ex); } stock=null; }
-            if(combat!=null) { try { if(combat.Available) Debug.Log("[VEFX] Combat explosions: "+combat.Detected+" detonations and "+combat.BulletHits+" bullet hits seen, "+combatDrawn+" drawn by VEFX ("+combatHits+" as light bursts), "+combatGivenBack+" left to BDArmory's visuals; "+warheadParts+" bombs/missiles destroyed as parts drawn as warheads ("+duds+" not set off: drawn small or as debris); BDArmory generic effects: "+combat.Emitters);
+            if(combat!=null) { try { if(combat.Available) Debug.Log("[VEFX] Combat explosions: "+combat.Detected+" detonations and "+combat.BulletHits+" bullet hits seen, "+combatDrawn+" drawn by VEFX ("+combatHits+" as light bursts), "+combatGivenBack+" left to BDArmory's visuals; "+warheadParts+" bombs/missiles destroyed as parts drawn as warheads ("+duds+" not set off: drawn small or as debris); "+exoticParts+" antimatter/Graviolium tanks; BDArmory generic effects: "+combat.Emitters);
                 if(collapses>0) Debug.Log("[VEFX] Building collapses drawn: "+collapses+", stock demolition effects hidden: "+collapseHidden.Count+" ("+string.Join(", ",new List<string>(collapseNames).ToArray())+"), hiding cost "+collapseFxMs.ToString("0")+" ms in all (worst frame "+collapseFxWorstMs.ToString("0.0")+" ms); other particle effects near them: "+(otherNames.Count>0?string.Join(", ",new List<string>(otherNames).ToArray()):"none")); combat.Dispose(); } catch(Exception ex) { Fail(ex); } combat=null; }
             if(pool!=null)
             {

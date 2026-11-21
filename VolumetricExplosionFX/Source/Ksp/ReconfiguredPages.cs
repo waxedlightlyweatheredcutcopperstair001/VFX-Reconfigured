@@ -37,6 +37,9 @@ namespace VolumetricExplosionFX.Rendering
                 GetBool=()=>s.SmokeShadows, SetBool=v=>s.SmokeShadows=v });
             slider(p,L("ReconfHaze","Atmospheric haze"),L("ReconfHazeHint","Distant explosions and ground clouds are veiled in the sky's colour by the air in between, like the land (Scatterer's own strength for the planet is followed). 0: off."),
                 0,3,0.05f,()=>(float)s.AtmosphericHaze,v=>s.AtmosphericHaze=v,Times);
+            p.Rows.Add(new UiRow { Kind=UiRowKind.Toggle, Label=L("ReconfExotic","Exotic fuel explosions"),
+                Hint=L("ReconfExoticHint","Tanks holding Antimatter (Far Future Technologies) or Graviolium (Blueshift) get their own explosions: a violet glow of ionised air round a white-hot core, or a blue flash and a gravitational lens. Only when those mods are installed."),
+                GetBool=()=>s.ExoticFuels, SetBool=v=>s.ExoticFuels=v });
             section(p,L("ReconfNuclear","Nuclear explosions"));
             slider(p,L("ReconfNukeGlow","Nuclear glow time"),L("ReconfNukeGlowHint","How long a 20 kt nuclear fireball and its rolling cloud glow; bigger bombs glow longer (a megaton: about a minute)."),
                 2,60,1,()=>(float)s.NukeGlowSeconds,v=>s.NukeGlowSeconds=v,v=>v.ToString("0",text.Culture)+" s");

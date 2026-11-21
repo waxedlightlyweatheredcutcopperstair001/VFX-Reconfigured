@@ -21,6 +21,7 @@ namespace VolumetricExplosionFX.Core
         public double SmokeOpacity=1, EdgeGlow=1, Brightness=1.4;
         public bool SmokeShadows=true;
         public double AtmosphericHaze=1;
+        public bool ExoticFuels=true;   // VFX Reconfigured: antimatter and Graviolium tanks get their own explosions (Exotic)
         public bool PartDebris=true, Residue=true;
         public Quality Quality=Quality.Ultra;
         public int MaxEvents=32, MaxDebris=3072, MaxLights=6, ParticlesPerEvent=256;
@@ -79,7 +80,7 @@ namespace VolumetricExplosionFX.Core
             DebrisTriangles=o.DebrisTriangles; ResidueSeconds=o.ResidueSeconds; Distance=o.Distance; Intensity=o.Intensity; DebrisDensity=o.DebrisDensity;
             Looks=o.Looks; LookEditor=o.LookEditor; Adaptive=o.Adaptive; VolumeDivisor=o.VolumeDivisor; LowMemory=o.LowMemory;
             ExplosionSpeed=o.ExplosionSpeed; GlowSeconds=o.GlowSeconds; SmokeHalfLife=o.SmokeHalfLife; SmokeMaxSeconds=o.SmokeMaxSeconds;
-            NukeGlowSeconds=o.NukeGlowSeconds; NukeSmokeHalfLife=o.NukeSmokeHalfLife; SmokeOpacity=o.SmokeOpacity; EdgeGlow=o.EdgeGlow; Brightness=o.Brightness; SmokeShadows=o.SmokeShadows; AtmosphericHaze=o.AtmosphericHaze;
+            NukeGlowSeconds=o.NukeGlowSeconds; NukeSmokeHalfLife=o.NukeSmokeHalfLife; SmokeOpacity=o.SmokeOpacity; EdgeGlow=o.EdgeGlow; Brightness=o.Brightness; SmokeShadows=o.SmokeShadows; AtmosphericHaze=o.AtmosphericHaze; ExoticFuels=o.ExoticFuels;
             CameraShake=o.CameraShake; PhotoMode=o.PhotoMode; Profile=o.Profile; UiStyle=o.UiStyle; UiLayout=o.UiLayout; UiOpacity=o.UiOpacity; UiSize=o.UiSize;
         }
         public string Structure { get { return Volumetric+"|"+MaxEvents+"|"+ParticlesPerEvent+"|"+MaxDebrisParts; } }
