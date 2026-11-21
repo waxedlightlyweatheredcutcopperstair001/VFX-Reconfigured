@@ -182,7 +182,7 @@ namespace VolumetricExplosionFX.Core
         {
             double l=Log(kg/10);
             return new SparkSpec { Jets=0, Start=0.05, Seconds=LithiumBurnSeconds(kg),
-                Rate=Numbers.Clamp(60+40*l,60,300), Speed=Numbers.Clamp(4+2*l,4,10), Spread=1, Size=Numbers.Clamp(0.08+0.03*l,0.08,0.18), Life=1.4,
+                Rate=Numbers.Clamp(250+150*l,250,900), Speed=Numbers.Clamp(30+12*l,30,70), Spread=1, Size=Numbers.Clamp(0.25+0.08*l,0.25,0.5), Life=2,
                 Hot=new Vec3(1,0.95,0.95), Cool=new Vec3(1,0.3,0.4),
                 FlameRate=10, FlameSize=Numbers.Clamp(0.6+0.5*l,0.6,3), Flame=new Vec3(1,0.45,0.55),
                 SmokeRate=5, SmokeSize=Numbers.Clamp(1.5+l,1.5,6), SmokeAlpha=0.5, Smoke=new Vec3(0.95,0.95,0.96) };
@@ -196,11 +196,42 @@ namespace VolumetricExplosionFX.Core
             if(ec<20) return null;
             double l=Log(ec/100);
             return new SparkSpec { Jets=(int)Numbers.Clamp(1+Math.Floor(Log(ec/250)*1.2),1,4), Start=0.15, Seconds=Numbers.Clamp(1.2+1.6*Log(ec/200),1.2,7),
-                Rate=Numbers.Clamp(150+120*l,150,600), Speed=Numbers.Clamp(14+5*l,14,30), Spread=0.25, Size=Numbers.Clamp(0.06+0.02*l,0.06,0.12), Life=0.9,
+                Rate=Numbers.Clamp(500+400*l,500,1500), Speed=Numbers.Clamp(70+25*l,70,130), Spread=0.3, Size=Numbers.Clamp(0.2+0.1*l,0.2,0.45), Life=2,
                 Hot=new Vec3(1,0.95,0.8), Cool=new Vec3(1,0.6,0.2),
-                FlameRate=25, FlameSize=Numbers.Clamp(0.3+0.15*l,0.3,0.9), Flame=new Vec3(1,0.55,0.18),
+                FlameRate=30, FlameSize=Numbers.Clamp(0.6+0.4*l,0.6,1.8), Flame=new Vec3(1,0.55,0.18),
                 SmokeRate=4, SmokeSize=Numbers.Clamp(0.8+0.4*l,0.8,2), SmokeAlpha=0.35, Smoke=new Vec3(0.78,0.78,0.8), PopFlash=Numbers.Clamp(0.5+0.2*l,0.5,1.2) };
         }
+
+        // How strongly sparks are flying at this age (0..1; the sound follows it): each jet bursts out, roars and dies; a
+        // fountain fades as the metal burns out. (Sparks still in the air after the stream ends: a short tail.)
+        public static double SparkLevel(SparkSpec s,double age)
+        {
+            if(s==null) return 0;
+            double t=age-s.Start, len=Math.Max(s.Seconds,1e-3);
+            if(t<0) return 0;
+            if(t>len) return Math.Max(0,1-(t-len)/0.6)*(s.Jets>0?0.3:0.4);
+            if(s.Jets<=0) return 1-0.6*t/len;
+            double seg=len/s.Jets, u=(t%seg)/seg;
+            return Numbers.Clamp(u*8,0,1)*Numbers.Clamp((1-u)*4,0,1)*(1-0.4*t/len);
+        }
+        // The jet bursting out at this age (-1: none yet / after the stream).
+        public static int JetAt(SparkSpec s,double age)
+        {
+            if(s==null||s.Jets<=0) return -1;
+            double t=age-s.Start; if(t<0||t>s.Seconds) return -1;
+            return (int)Math.Min(Math.Floor(t/(s.Seconds/s.Jets)),s.Jets-1);
+        }
+        // A battery's arc flash: blinding blue-white at once, then crackling flickers as the short keeps arcing.
+        public static double ArcFlash(double age,uint seed)
+        {
+            if(age<0) return 0;
+            double f=2.5*Math.Exp(-age/0.1);
+            var rnd=new SplitRandom(seed^0x41524353u);
+            int n=3+(int)(rnd.Next()*3);
+            for(int i=0;i<n;i++) { double at=0.1+1.2*rnd.Next(), p=0.5+0.6*rnd.Next(), dt=age-at; if(dt>=0) f+=p*Math.Exp(-dt/0.05); }
+            return f;
+        }
+        public static double ArcFlashEnd { get { return 1.6; } }
 
         // ---------------- Nuclear salt water ----------------
         public static WarheadInfo SaltWaterWarhead(double kg)

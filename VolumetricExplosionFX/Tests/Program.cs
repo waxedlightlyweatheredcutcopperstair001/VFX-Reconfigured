@@ -1315,6 +1315,17 @@ class Program
                 Check(batPlan.PartKind==PartKind.Battery&&batPlan.Sparks!=null&&batPlan.Sparks.Jets>=1&&Exotic.BatterySparks(10)==null&&batSmall.Jets==1&&batBig.Jets>batSmall.Jets&&batBig.Seconds>batSmall.Seconds&&batBig.Seconds<=7,
                     "A battery vents its cells in jets of sparks, one after another: more jets and longer for a bigger charge");
             }
+            {
+                // VFX Reconfigured 0.5.2: far-flying spark jets with sound, the battery's arc flash drawn over the explosion.
+                var jb=Exotic.BatterySparks(4000); var jl=Exotic.LithiumSparks(470);
+                Check(jb.Speed>=70&&jb.Rate>=500&&jb.Size>=0.2&&jb.Life*0.5>=1&&jb.Life*1.5<=3&&jl.Speed>=30&&jl.Life*1.5<=3,
+                    "Sparks fly fast and far (battery 70+ m/s, lithium 30+ m/s) and are gone within 1-3 s");
+                Check(Exotic.SparkLevel(jb,0)==0&&Exotic.SparkLevel(jb,jb.Start+0.3*jb.Seconds/jb.Jets)>0.5&&Exotic.SparkLevel(jb,jb.End+1)==0&&
+                    Exotic.JetAt(jb,jb.Start+0.01)==0&&Exotic.JetAt(jb,jb.End-0.01)==jb.Jets-1&&Exotic.JetAt(jb,jb.End+0.5)==-1,
+                    "The spark sound follows the jets: silent before, loud while one roars, a pop as each bursts out, quiet after");
+                Check(Exotic.ArcFlash(0,7)>2.4&&Exotic.ArcFlash(Exotic.ArcFlashEnd,7)<0.05&&Exotic.ArcFlash(0.5,7)>=0,
+                    "A battery's arc flash is blinding at once and crackles out within about a second and a half");
+            }
             Console.WriteLine("Verified assertions: "+count);
         }
         catch(Exception ex) { Console.Error.WriteLine("FAIL "+ex.Message); Environment.Exit(1); }

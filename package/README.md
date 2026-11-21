@@ -1,4 +1,4 @@
-# Volumetric FX Reconfigured 0.5.1
+# Volumetric FX Reconfigured 0.6.0
 
 Volumetric explosions, fire, smoke and wreckage, and volumetric engine dust and steam, for Kerbal Space Program
 1.12.5, in one mod. Based on **Volumetric Explosion FX** 1.1.1 and **Volumetric Ground FX** 1.1.0 by Warnix (both MIT),
@@ -21,7 +21,7 @@ Windows (DirectX 11). One toolbar button opens the settings, in flight and at th
 - A bright, white-hot flash (Explosion brightness) whose glow lasts by the explosion's size: small blasts flash
   briefly, big ones glow longer (the setting is a medium explosion's, 1.5 s). Then the smoke's opacity halves every 3 seconds and it is gone after a minute at most. Only
   fires (fuel tanks, batteries) glow longer. Nuclear explosions glow and linger much longer.
-- Batteries short out in an arc flash, then vent jets of sparks and flame like overheating cells.
+- Batteries short out in a blue arc flash, then vent jets of sparks and flame like overheating cells, hissing and crackling.
 - What explodes depends on the part: wings, control surfaces, structural, fairing and command/probe parts break into
   debris with dust and smoke that hangs for a few seconds and settles; batteries flash and burn by their charge; fuel
   tanks blow up by how full they are, and an empty tank doesn't explode at all.

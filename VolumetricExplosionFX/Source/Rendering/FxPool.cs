@@ -57,7 +57,7 @@ namespace VolumetricExplosionFX.Rendering
                 catch(Exception ex) { slots[0].Clear(); Debug.LogWarning("[VEFX] Particle warm-up skipped: "+ex.GetType().Name); }
             }
             Camera.onPreCull+=OnPreCull; hooked=true;
-            LensPass.Material=volumes.LensMaterial;
+            LensPass.Material=volumes.LensMaterial; LensPass.GlowMaterial=volumes.ExoticGlowMaterial;
             Debug.Log("[VEFX] Video memory "+VideoMemory+" MB; memory saver "+(SavesMemory?"on":"off")+(s.LowMemory==0?" (automatic)":""));
         }
         bool hooked, memoryFailureLogged;

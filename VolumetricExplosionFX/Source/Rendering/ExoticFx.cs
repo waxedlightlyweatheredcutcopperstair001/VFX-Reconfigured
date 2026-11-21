@@ -15,10 +15,13 @@ namespace VolumetricExplosionFX.Rendering
         readonly float[] intensity=new float[MaxGlows];
         static readonly int GlowId=Shader.PropertyToID("_ExGlow"), EdgeId=Shader.PropertyToID("_ExEdge"), CoreId=Shader.PropertyToID("_ExCore");
         ExoticKind kind; double units, kg; float fireball, air, end;
+        // A battery's arc flash (not an exotic fuel, drawn here too), and whether the glows are drawn over everything
+        // (LensPass) instead of in the transparent pass: the short flashes are, the lithium fire's lasting glare isn't.
+        bool battery, overlay; uint arcSeed;
         // Fission pulse units: when and where each goes off (fireball radii).
         readonly double[] pulseTimes=new double[MaxGlows]; readonly Vec3[] pulseOffsets=new Vec3[MaxGlows]; int pulses;
         readonly Transform root;
-        internal bool Active { get { return kind!=ExoticKind.None; } }
+        internal bool Active { get { return kind!=ExoticKind.None||battery; } }
         internal ExoticKind Kind { get { return kind; } }
         internal float End { get { return end; } }
         // For the explosion's light: extra intensity, its colour and reach while the exotic part lasts.
@@ -48,6 +51,8 @@ namespace VolumetricExplosionFX.Rendering
         {
             kind=plan!=null?plan.Exotic:ExoticKind.None; units=plan!=null?plan.ExoticUnits:0; kg=plan!=null?plan.ExoticKg:0;
             fireball=Mathf.Max((float)fireballRadius,1); this.air=air; LightBoost=0; pulses=0;
+            battery=kind==ExoticKind.None&&plan!=null&&plan.PartKind==PartKind.Battery&&plan.Sparks!=null&&plan.ElectricFraction>0.01;
+            overlay=kind!=ExoticKind.Lithium; arcSeed=seed;
             for(int i=0;i<MaxGlows;i++) { intensity[i]=0; if(glows[i]!=null) { glows[i].enabled=false; glows[i].transform.localPosition=Vector3.zero; } }
             switch(kind)
             {
@@ -65,7 +70,7 @@ namespace VolumetricExplosionFX.Rendering
                     end=(float)pulseTimes[Mathf.Max(pulses-1,0)]+3;
                     break;
                 }
-                default: end=0; break;
+                default: end=battery?(float)Exotic.ArcFlashEnd:0; break;
             }
         }
         internal bool Alive(float age) { return Active&&age<end; }
@@ -73,6 +78,11 @@ namespace VolumetricExplosionFX.Rendering
         {
             intensity[i]=power;
             if(glows[i]==null) return;
+            if(overlay)
+            {
+                if(power>0.003f) LensPass.RegisterGlow(new LensPass.Glow { Position=glows[i].transform.position, Shape=new Vector4(radius,power,coreShare,0), Edge=edge, Core=core });
+                return;
+            }
             props[i].SetVector(GlowId,new Vector4(radius,power,coreShare,0));
             props[i].SetColor(EdgeId,edge); props[i].SetColor(CoreId,core);
             glows[i].SetPropertyBlock(props[i]);
@@ -84,6 +94,14 @@ namespace VolumetricExplosionFX.Rendering
             for(int i=0;i<MaxGlows;i++) intensity[i]=0;
             if(!Active) return;
             if(age>end) { for(int i=0;i<MaxGlows;i++) if(glows[i]!=null) glows[i].enabled=false; return; }
+            if(battery)
+            {
+                // The short circuit's blue-white arc flash, crackling on for a second.
+                float p=(float)Exotic.ArcFlash(age,arcSeed), R=Mathf.Max(fireball*2.5f,6);
+                Set(0,R,p,0.15f,new Color(0.35f,0.55f,1f),new Color(0.85f,0.92f,1f));
+                LightBoost=p*4; LightColour=new Color(0.6f,0.75f,1f); LightRange=R*5;
+                return;
+            }
             switch(kind)
             {
                 case ExoticKind.Antimatter:
@@ -146,12 +164,12 @@ namespace VolumetricExplosionFX.Rendering
         }
         internal void ShowFor(Camera cam)
         {
-            bool mine=Active&&CameraRig.IsFlight(cam)&&(CameraRig.Far==null||cam==CameraRig.Near);
+            bool mine=Active&&!overlay&&CameraRig.IsFlight(cam)&&(CameraRig.Far==null||cam==CameraRig.Near);
             for(int i=0;i<MaxGlows;i++) if(glows[i]!=null) glows[i].enabled=mine&&intensity[i]>0.003f;
         }
         internal void Clear()
         {
-            kind=ExoticKind.None; LightBoost=0; pulses=0;
+            kind=ExoticKind.None; battery=false; LightBoost=0; pulses=0;
             for(int i=0;i<MaxGlows;i++) { intensity[i]=0; if(glows[i]!=null) glows[i].enabled=false; }
         }
     }

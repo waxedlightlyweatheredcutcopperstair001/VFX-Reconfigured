@@ -151,7 +151,8 @@ namespace VolumetricExplosionFX.Rendering
         internal double CoreRadius { get { return plan==null?0:Math.Max(2,plan.Radius*0.5); } }   // inside the fireball itself
         internal double CoverRadius { get { return plan==null?0:ReservedVolume?VolumeEvolution.DomeRadius(plan)*1.5:Math.Max(4,plan.Radius*1.5); } }
         internal void ReleaseVolume() { if(volume!=null) volume.Retire(); }
-        readonly ExoticFx exotic;   // VFX Reconfigured: antimatter and Graviolium (glow, gravitational lens)
+        readonly ExoticFx exotic;
+        readonly SparkSound sound;   // VFX Reconfigured: hiss and crackle of a spark jet   // VFX Reconfigured: antimatter and Graviolium (glow, gravitational lens)
         internal void ShowFor(Camera cam,LowResVolumes lowRes=null)
         {
             if(!active) return;
@@ -209,6 +210,7 @@ namespace VolumetricExplosionFX.Rendering
             flash=lightObject.AddComponent<Light>(); flash.type=LightType.Point; flash.shadows=LightShadows.None; flash.enabled=false;
             if(volumes.Material!=null) volume=new HeroVolume(Root.transform,volumes);
             exotic=new ExoticFx(Root.transform,volumes);
+            sound=new SparkSound(Root.transform);
             if(volumes.FireMaterial!=null&&volumes.Cube!=null) fireVolume=new FireVolumeRenderer(Root.transform,volumes.Cube,volumes.FireMaterial,EffectLayer.Value);
             if(volumes.SplashMaterial!=null&&volumes.Cube!=null) splashVolume=new SplashVolume(Root.transform,volumes.Cube,volumes.SplashMaterial);
             if(volumes.SmokeFire!=null)
@@ -421,6 +423,7 @@ namespace VolumetricExplosionFX.Rendering
             if(plan.Warhead==WarheadKind.Nuke&&plan.Look!=null&&plan.Look.Modern) flash.range=Mathf.Clamp((float)layout.RadiusMeters*10,800,12000);
             flash.intensity=dome?(float)VolumeEvolution.LightIntensity(volume.State):3*(float)plan.FireFraction*lightScale;
             exotic.Begin(plan,VolumeEvolution.FireballRadius(plan),air,s.PersistentId^(uint)plan.ExoticUnits);
+            sound.Begin(plan,s.PersistentId);
             if(exotic.Active) lit=light&&settings.Lighting;   // (Graviolium's flash has no fire of its own)
             LightWanted=lit?flash.intensity:0;
         }
@@ -629,6 +632,7 @@ namespace VolumetricExplosionFX.Rendering
             // By day a fireball tints the sunlit ground around it only a little (it lit it up like a lamp); at night fully.
             if(plan.Look!=null&&plan.Look.Modern&&plan.Warhead!=WarheadKind.Nuke) want*=1-0.4f*FxPool.Daylight;   // (a nuclear flash outshines the sun)
             exotic.Tick(age);
+            sound.Tick(age);
             if(exotic.LightBoost>0.01f)
             {
                 // The exotic glow lights the land: violet-white (antimatter) or electric blue (Graviolium).
@@ -760,6 +764,7 @@ namespace VolumetricExplosionFX.Rendering
             if(fireVolume!=null) fireVolume.Clear(); fireTarget=null;
             if(splashVolume!=null) splashVolume.Clear();
             if(exotic!=null) exotic.Clear();
+            if(sound!=null) sound.Stop();
             if(scorch!=null) scorch.enabled=false; hasScorch=false;
             if(scar!=null) scar.enabled=false; scarBuilt=0;
             if(shadow!=null) shadow.enabled=false; hasShadow=false;
