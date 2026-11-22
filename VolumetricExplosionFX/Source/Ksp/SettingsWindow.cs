@@ -18,7 +18,6 @@ namespace VolumetricExplosionFX.Ksp
         Font fallbackFont;
         bool locked, dirty, saveFailed; float saveAt, savedAt=-100, testedAt=-100;
         string testNote;
-        bool builtWithEditor; int builtStyle, builtLayout;
         static int lastPage;
         protected void Start()
         {
@@ -63,9 +62,8 @@ namespace VolumetricExplosionFX.Ksp
         void SyncLanguage()
         {
             UiText selected=GameText.Current;
-            // Rebuild for a new language, or when the look editor page is switched on or off.
-            if(ReferenceEquals(text,selected)&&(panel==null||builtWithEditor==SettingsStore.Settings.LookEditor&&builtStyle==SettingsStore.Settings.UiStyle&&
-                builtLayout==SettingsStore.Settings.UiLayout)) return;
+            // Rebuild for a new language.
+            if(ReferenceEquals(text,selected)) return;
             text=selected;
             if(panel==null) return;
             bool visible=panel.Visible; lastPage=panel.Page;
@@ -76,32 +74,16 @@ namespace VolumetricExplosionFX.Ksp
         UiModel Model()
         {
             FxSettings s=SettingsStore.Settings;
-            builtWithEditor=s.LookEditor; builtStyle=s.UiStyle; builtLayout=s.UiLayout;
             return SettingsModel.Build(s,new SettingsModel.Hooks {
-                Version=FlightController.Version,
                 Conflict=FlightController.OtherExplosionMod,
                 Text=text,
                 Changed=()=>{ SettingsStore.Touch(); dirty=true; saveFailed=false; saveAt=Time.unscaledTime+1; },
                 Close=CloseFromWindow,
-                Reset=()=>{ SettingsStore.Reset(); dirty=true; saveFailed=false; saveAt=Time.unscaledTime+0.2f; },
+                Reset=()=>{ SettingsStore.Reset(); SettingsModel.ResetGround(); dirty=true; saveFailed=false; saveAt=Time.unscaledTime+0.2f; },
                 CanTest=()=>FlightController.CanTest,
                 Test=kind=>{ bool ok=FlightController.Test(kind); testedAt=Time.unscaledTime;
                     testNote=ok?"PreviewStarted":"PreviewUnavailable"; return ok; },
-                TestLook=kind=>{ bool ok=FlightController.TestLook((LookKind)kind); testedAt=Time.unscaledTime;
-                    testNote=ok?"PreviewStarted":"PreviewUnavailable"; return ok; },
-                Status=Status, HasMod=HasMod });
-        }
-        // Whether a mod is loaded: an assembly whose name starts with one of these (any case).
-        static List<string> loaded;
-        static bool HasMod(string[] prefixes)
-        {
-            if(loaded==null)
-            {
-                loaded=new List<string>();
-                foreach(var a in AppDomain.CurrentDomain.GetAssemblies()) { try { loaded.Add(a.GetName().Name); } catch(Exception) { } }
-            }
-            foreach(string name in loaded) foreach(string p in prefixes) if(name!=null&&name.StartsWith(p,StringComparison.OrdinalIgnoreCase)) return true;
-            return false;
+                Status=Status });
         }
         string Status()
         {
@@ -118,7 +100,7 @@ namespace VolumetricExplosionFX.Ksp
             Font f=HighLogic.Skin!=null?HighLogic.Skin.font:null;
             if(f==null) try { f=UnityEngine.Resources.GetBuiltinResource<Font>("Arial.ttf"); } catch(Exception) { }
             if(f==null) f=GUI.skin!=null?GUI.skin.font:null;
-            string sample=text.Get("General","General")+text.Get("Enabled","Enable effects");
+            string sample=text.Get("VfxrPerformance","Performance")+text.Get("VfxrExplosions","Explosion Effects");
             if(HasGlyphs(f,sample)) return f;
             try
             {
@@ -137,8 +119,8 @@ namespace VolumetricExplosionFX.Ksp
             foreach(char c in sample) if(!char.IsWhiteSpace(c)&&!font.HasCharacter(c)) return false;
             return true;
         }
-        // The game's UI scale times the window size the player chose.
-        static float Scale() { return Mathf.Clamp(GameSettings.UI_SCALE,0.5f,2.5f)*(float)SettingsStore.Settings.UiSize; }
+        // The game's UI scale.
+        static float Scale() { return Mathf.Clamp(GameSettings.UI_SCALE,0.5f,2.5f)*0.9f; }
         protected void Update()
         {
             if(panel==null) return;
@@ -147,7 +129,7 @@ namespace VolumetricExplosionFX.Ksp
                 SyncLanguage();
                 if(panel==null) return;
                 if(panel.Visible&&Input.GetKeyDown(KeyCode.Escape)) { CloseFromWindow(); return; }
-                panel.SetScale(Scale()); panel.SetOpacity((float)SettingsStore.Settings.UiOpacity);
+                panel.SetScale(Scale());
                 panel.Tick(Time.unscaledDeltaTime);
                 lastPage=panel.Page;
                 bool over=panel.Contains(Input.mousePosition);

@@ -53,7 +53,8 @@ and `dotnet run --project VolumetricExplosionFX/Tests/VolumetricExplosionFX.Test
 
 ## Main changes from upstream
 
-- One assembly (`VolumetricFXReconfigured`), one GameData folder, one settings window (the ground settings are a page).
+- One assembly (`VolumetricFXReconfigured`), one GameData folder, one settings window with three tabs (Performance, Explosion
+  Effects, Ground Effects: `Source/Ksp/SettingsModel.cs`, drawn by `SettingsPanel.cs`).
 - `VolumetricExplosionFX/Source/Core/Reconfig.cs`: explosion speed, glow time, smoke half-life and limits, read by
   `VolumeEvolution` (fireball/smoke on a faster clock, shock and dust on real time) and `BlastParticles`.
 - `VisualEnergy`/`Residue`: what explodes and burns by part kind; `BlastParticles`: dust for non-exploding parts,

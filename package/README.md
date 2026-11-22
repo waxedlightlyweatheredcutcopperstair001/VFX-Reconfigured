@@ -1,4 +1,4 @@
-# Volumetric FX Reconfigured 0.6.0
+# Volumetric FX Reconfigured 0.7.0
 
 Volumetric explosions, fire, smoke and wreckage, and volumetric engine dust and steam, for Kerbal Space Program
 1.12.5, in one mod. Based on **Volumetric Explosion FX** 1.1.1 and **Volumetric Ground FX** 1.1.0 by Warnix (both MIT),
@@ -48,9 +48,12 @@ Windows (DirectX 11). One toolbar button opens the settings, in flight and at th
 - The big billowing launch plumes only appear on launch pads (not a plane on the runway).
 - Jet engines raise fainter, more transparent dust instead of rocket plumes.
 
-**Settings** (toolbar button, Simple theme by default): *Explosion look* (speed, brightness, glow time, smoke shadows, smoke half-life, longest smoke, smoke opacity, glow
-at the plume's edges, nuclear glow and smoke, exotic fuel explosions, explosion and particle limits) and *Ground effects* (the engine dust
-settings), as well as the original pages.
+**Settings** (toolbar button), three tabs:
+- *Performance*: limits (explosions, volumes, particles, lights, debris, fragments, ground effect sources), rendering
+  (volumetric on/off, resolution, detail, distortion, lighting, adaptive, video memory saver) and draw distances.
+- *Explosion Effects*: general (on/off, hide KSP's explosions, exotic fuels, camera shake, photo mode, test explosion),
+  fire & smoke, debris & impacts, nuclear.
+- *Ground Effects*: which effects (dust, pad steam, water spray, vacuum ejecta), their look, and ground marks.
 
 ## Licence
 

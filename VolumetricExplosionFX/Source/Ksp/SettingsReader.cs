@@ -48,13 +48,9 @@ namespace VolumetricExplosionFX.Ksp
             s.Distance=Number(n,"fxDistance",s.Distance); s.Intensity=Number(n,"intensity",s.Intensity);
             s.DebrisDensity=Number(n,"debrisDensity",s.DebrisDensity);
             s.VolumeDivisor=(int)Number(n,"volumeResolution",Flag(n,"halfResolutionVolumes",false)?2:s.VolumeDivisor);
-            s.LookEditor=Flag(n,"lookEditor",s.LookEditor); s.Adaptive=Flag(n,"adaptivePerformance",s.Adaptive);
+            s.Adaptive=Flag(n,"adaptivePerformance",s.Adaptive);
             s.LowMemory=(int)Number(n,"videoMemorySaver",s.LowMemory);
-            s.Looks.UseClassic=Flag(n,"classicLook",s.Looks.UseClassic);
-            s.UiStyle=(int)Number(n,"uiStyle",s.UiStyle);
-            s.UiLayout=(int)Number(n,"uiLayout",s.UiLayout);
-            if(Number(n,"uiStyleVersion",0)<1) s.UiStyle=5;   // VFX Reconfigured: settings saved before the Simple theme switch to it once
-            s.UiOpacity=Number(n,"uiOpacity",s.UiOpacity); s.UiSize=Number(n,"uiSize",s.UiSize);
+            s.Looks.UseClassic=false;   // (VFX Reconfigured: the look editor's "compare with 1.0" is gone from the window: always off)
             // VFX Reconfigured
             s.ExplosionSpeed=Number(n,"explosionSpeed",s.ExplosionSpeed); s.GlowSeconds=Number(n,"glowSeconds",s.GlowSeconds);
             s.SmokeHalfLife=Number(n,"smokeHalfLife",s.SmokeHalfLife); s.SmokeMaxSeconds=Number(n,"smokeMaxSeconds",s.SmokeMaxSeconds);
@@ -94,7 +90,7 @@ namespace VolumetricExplosionFX.Ksp
             Add(n,"maximumEvents",s.MaxEvents); Add(n,"maximumDebris",s.MaxDebris); Add(n,"maximumLights",s.MaxLights);
             Add(n,"particlesPerEvent",s.ParticlesPerEvent); Add(n,"maximumVolumes",s.MaxVolumes); Add(n,"volumeSteps",s.VolumeSteps);
             Add(n,"maximumDebrisParts",s.MaxDebrisParts); Add(n,"debrisTrianglesPerPart",s.DebrisTriangles);
-            Add(n,"lookEditor",s.LookEditor); Add(n,"adaptivePerformance",s.Adaptive); Add(n,"volumeResolution",s.VolumeDivisor); Add(n,"videoMemorySaver",s.LowMemory); Add(n,"classicLook",s.Looks.UseClassic); Add(n,"uiStyle",s.UiStyle); Add(n,"uiStyleVersion",1); Add(n,"uiLayout",s.UiLayout); Add(n,"uiOpacity",s.UiOpacity); Add(n,"uiSize",s.UiSize);
+            Add(n,"adaptivePerformance",s.Adaptive); Add(n,"volumeResolution",s.VolumeDivisor); Add(n,"videoMemorySaver",s.LowMemory); Add(n,"classicLook",s.Looks.UseClassic);
             Add(n,"explosionSpeed",s.ExplosionSpeed); Add(n,"glowSeconds",s.GlowSeconds); Add(n,"smokeHalfLife",s.SmokeHalfLife);
             Add(n,"smokeMaxSeconds",s.SmokeMaxSeconds); Add(n,"nukeGlowSeconds",s.NukeGlowSeconds); Add(n,"nukeSmokeHalfLife",s.NukeSmokeHalfLife);
             Add(n,"smokeOpacity",s.SmokeOpacity); Add(n,"edgeGlow",s.EdgeGlow); Add(n,"brightness",s.Brightness); Add(n,"smokeShadows",s.SmokeShadows); Add(n,"atmosphericHaze",s.AtmosphericHaze); Add(n,"exoticFuels",s.ExoticFuels);
@@ -151,11 +147,9 @@ namespace VolumetricExplosionFX.Ksp
         internal static void Reset()
         {
             // The look profiles have their own reset in the look editor; keep them here.
-            LookLibrary looks=Settings.Looks; bool editor=Settings.LookEditor; int style=Settings.UiStyle, layout=Settings.UiLayout;
-            double opacity=Settings.UiOpacity, size=Settings.UiSize;
+            LookLibrary looks=Settings.Looks;
             Settings.CopyFrom(SettingsReader.Defaults());
-            Settings.Looks=looks; Settings.LookEditor=editor;
-            Settings.UiStyle=style; Settings.UiLayout=layout; Settings.UiOpacity=opacity; Settings.UiSize=size;   // (the window keeps its look)
+            Settings.Looks=looks;
             Version++;
         }
     }

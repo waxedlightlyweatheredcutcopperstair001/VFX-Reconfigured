@@ -36,7 +36,6 @@ def main():
     p.add_argument('--frame',help='close-up frames, e.g. "960x540;0.5,1.5;0.6" (size; ages; camera distance factor)')
     p.add_argument('--perf',action='store_true',help='measure GPU time per frame at 2560x1440 with the camera close (ignored work/preview/perf.txt)')
     p.add_argument('--wreck',nargs='?',const='all',help='render torn-part debris, residue and smoke timelines into ignored work/preview (optional scenario filter)')
-    p.add_argument('--ui',action='store_true',help='render every page of the settings window into ignored work/preview')
     p.add_argument('--scorch',action='store_true',help='render a sheet of ground marks seen from above into ignored work/preview')
     p.add_argument('--half',nargs='?',const='2',help='render volumes through the runtime reduced-resolution path (divisor 2 or 3)')
     p.add_argument('--dusk',action='store_true',help='preview at dusk to judge the light cast by explosions')
@@ -59,13 +58,11 @@ def main():
     if core.exists(): shutil.rmtree(core)
     core.mkdir(parents=True)
     for source in list((ROOT/'Source'/'Core').glob('*.cs'))+list((ROOT/'Source'/'Unity').glob('*.cs')): shutil.copy2(source,core/source.name)
-    if not a.ui:
-        for unused in [scratch/'Assets'/'Editor'/'PreviewUi.cs',core/'SettingsPanel.cs',core/'SettingsModel.cs']:
-            if unused.exists(): unused.unlink()
-        manifest=scratch/'Packages'/'manifest.json'
-        packages=json.loads(manifest.read_text())
-        packages['dependencies'].pop('com.unity.ugui',None)
-        manifest.write_text(json.dumps(packages)+'\n')
+    # (VFX Reconfigured: the settings window lives in Source/Ksp now; no uGUI in the bench)
+    manifest=scratch/'Packages'/'manifest.json'
+    packages=json.loads(manifest.read_text())
+    packages['dependencies'].pop('com.unity.ugui',None)
+    manifest.write_text(json.dumps(packages)+'\n')
     if a.perf:
         out=ROOT/'work'/'preview';out.mkdir(parents=True,exist_ok=True)
         env=os.environ.copy();env['VEFX_PREVIEW_OUTPUT']=str(out)
@@ -83,14 +80,6 @@ def main():
         subprocess.run([editor,'-batchmode','-projectPath',str(scratch),'-executeMethod','PreviewScorch.Render',
             '-logFile',str(log)],env=env,check=True,cwd=ROOT)
         print('Ground marks sheet in ignored work/preview (editor render, not a KSP test).')
-        return
-    if a.ui:
-        out=ROOT/'work'/'preview';out.mkdir(parents=True,exist_ok=True)
-        env=os.environ.copy();env['VEFX_PREVIEW_OUTPUT']=str(out)
-        log=ROOT/'work'/'unity-ui.log'
-        subprocess.run([editor,'-batchmode','-projectPath',str(scratch),'-executeMethod','PreviewUi.Render',
-            '-logFile',str(log)],env=env,check=True,cwd=ROOT)
-        print('Settings window pages in ignored work/preview (editor render, not a KSP test).')
         return
     if a.wreck:
         out=ROOT/'work'/'preview';out.mkdir(parents=True,exist_ok=True)

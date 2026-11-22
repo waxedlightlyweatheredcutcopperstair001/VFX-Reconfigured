@@ -11,8 +11,6 @@ namespace VolumetricExplosionFX.Core
         public int PhotoMode;
         // 1.1: the settings window's style (0 glass, 1 neon, 2 terminal, 3 paper, 4 mission), layout (0 open,
         // 1 panel, 2 compact), backgrounds' opacity and size on screen (saved).
-        public int UiStyle=5, UiLayout;   // VFX Reconfigured: 5 = Simple (the BDArmory Lite look) by default
-        public double UiOpacity=0.82, UiSize=0.9;
         // Last quick setup chosen in the window (-1: none; not saved).
         public int Profile=-1;
         public bool Breakup=false;
@@ -29,10 +27,9 @@ namespace VolumetricExplosionFX.Core
         public int MaxDebrisParts=32, DebrisTriangles=12000;
         public double ResidueSeconds=45;
         public double Distance=10000, Intensity=1, DebrisDensity=1;
-        // Hand-tuned look per kind of explosion (shared, edited live by the look editor).
+        // Hand-tuned look per kind of explosion (VFX Reconfigured: the look editor is gone from the window; values saved
+        // by it are still read).
         public LookLibrary Looks=new LookLibrary();
-        // Shows the look editor page (advanced; off for regular players).
-        public bool LookEditor;
         // Lowers volume detail and light count while frames exceed the budget.
         public bool Adaptive=false;
         // Volumes are ray-marched at 1/VolumeDivisor of the screen width and height (1 = full).
@@ -78,10 +75,10 @@ namespace VolumetricExplosionFX.Core
             PartDebris=o.PartDebris; Residue=o.Residue; Quality=o.Quality; MaxEvents=o.MaxEvents; MaxDebris=o.MaxDebris; MaxLights=o.MaxLights;
             ParticlesPerEvent=o.ParticlesPerEvent; MaxVolumes=o.MaxVolumes; VolumeSteps=o.VolumeSteps; MaxDebrisParts=o.MaxDebrisParts;
             DebrisTriangles=o.DebrisTriangles; ResidueSeconds=o.ResidueSeconds; Distance=o.Distance; Intensity=o.Intensity; DebrisDensity=o.DebrisDensity;
-            Looks=o.Looks; LookEditor=o.LookEditor; Adaptive=o.Adaptive; VolumeDivisor=o.VolumeDivisor; LowMemory=o.LowMemory;
+            Looks=o.Looks; Adaptive=o.Adaptive; VolumeDivisor=o.VolumeDivisor; LowMemory=o.LowMemory;
             ExplosionSpeed=o.ExplosionSpeed; GlowSeconds=o.GlowSeconds; SmokeHalfLife=o.SmokeHalfLife; SmokeMaxSeconds=o.SmokeMaxSeconds;
             NukeGlowSeconds=o.NukeGlowSeconds; NukeSmokeHalfLife=o.NukeSmokeHalfLife; SmokeOpacity=o.SmokeOpacity; EdgeGlow=o.EdgeGlow; Brightness=o.Brightness; SmokeShadows=o.SmokeShadows; AtmosphericHaze=o.AtmosphericHaze; ExoticFuels=o.ExoticFuels;
-            CameraShake=o.CameraShake; PhotoMode=o.PhotoMode; Profile=o.Profile; UiStyle=o.UiStyle; UiLayout=o.UiLayout; UiOpacity=o.UiOpacity; UiSize=o.UiSize;
+            CameraShake=o.CameraShake; PhotoMode=o.PhotoMode; Profile=o.Profile;
         }
         public string Structure { get { return Volumetric+"|"+MaxEvents+"|"+ParticlesPerEvent+"|"+MaxDebrisParts; } }
         public void Validate()
@@ -98,8 +95,6 @@ namespace VolumetricExplosionFX.Core
             SmokeHalfLife=Numbers.Clamp(SmokeHalfLife,0.5,30); SmokeMaxSeconds=Numbers.Clamp(SmokeMaxSeconds,5,180);
             NukeGlowSeconds=Numbers.Clamp(NukeGlowSeconds,2,60); NukeSmokeHalfLife=Numbers.Clamp(NukeSmokeHalfLife,5,300);
             SmokeOpacity=Numbers.Clamp(SmokeOpacity,0.1,2); EdgeGlow=Numbers.Clamp(EdgeGlow,0,1); Brightness=Numbers.Clamp(Brightness,0.5,2.5); AtmosphericHaze=Numbers.Clamp(AtmosphericHaze,0,3);
-            UiStyle=(int)Numbers.Clamp(UiStyle,0,5); UiLayout=(int)Numbers.Clamp(UiLayout,0,2);
-            UiOpacity=Numbers.Clamp(UiOpacity,0.35,1); UiSize=Numbers.Clamp(UiSize,0.7,1.3);
         }
     }
 }
