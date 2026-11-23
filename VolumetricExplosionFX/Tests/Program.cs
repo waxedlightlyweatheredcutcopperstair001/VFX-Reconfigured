@@ -1273,6 +1273,20 @@ class Program
                 Check(nukeAm.Exotic==ExoticKind.Antimatter&&nukeAm.OreKg==0&&nukeAm.Soot<=0.04&&nukeAm.SmokeB>nukeAm.SmokeR&&
                     Math.Abs(Reconfig.GlowSeconds(nukeAm)-0.5*Reconfig.GlowSeconds(nukePlain))<1e-6,
                     "An antimatter blast is clean (no soil, little soot, pale cloud) and its core glows half as long");
+                // VFX Reconfigured 0.8: looks asked for by another mod (EffectsApi.SetPartLook).
+                var amLook=new FxPlan{ Atmosphere=1, Look=LookProfile.Default(LookKind.Tank) }; Warhead.Apply(amLook,amBig);
+                Check(Exotic.ApplyLook(amLook,"Antimatter",amBig.TntKg)&&amLook.Exotic==ExoticKind.Antimatter&&
+                    Math.Abs(amLook.ExoticUnits-300000)<1e-3*300000&&amLook.Soot<=0.04,
+                    "The antimatter look is the antimatter blast, at the charge's own yield (units worked back from its TNT)");
+                var green=new FxPlan{ Atmosphere=1, Look=LookProfile.Default(LookKind.Tank) }; Warhead.Apply(green,amBig);
+                Check(Exotic.ApplyLook(green,"mushroom",amBig.TntKg)&&green.Tint==Exotic.TintGreen&&green.SmokeG>green.SmokeR*2&&green.SmokeG>green.SmokeB*2&&green.SmokeG<0.4,
+                    "The mushroom look: green flames and dark green smoke");
+                var plainLook=new FxPlan{ Atmosphere=1, Look=LookProfile.Default(LookKind.Tank) }; Warhead.Apply(plainLook,amBig);
+                double sr=plainLook.SmokeR;
+                Check(!Exotic.ApplyLook(plainLook,"sparkly",1e6)&&!Exotic.ApplyLook(plainLook,null,1e6)&&!Exotic.ApplyLook(null,"mushroom",1)&&plainLook.Tint==0&&plainLook.SmokeR==sr,
+                    "Unknown or missing looks change nothing");
+                double capR=0.76,capG=0.72,capB=0.68; Exotic.GreenSmoke(ref capR,ref capG,ref capB,0.85);
+                Check(capG>capR&&capG>capB&&capG<0.4,"A green-tinted nuclear cloud's cap is dark green");
                 Check(Exotic.AntimatterGlowScale(1)>=3.5&&Exotic.AntimatterGlowScale(0.1)>Exotic.AntimatterGlowScale(1)&&Exotic.AntimatterGlowScale(0)<3&&
                     Exotic.AntimatterGlow(0)>1.2&&Exotic.AntimatterGlow(1)<0.15,
                     "The ionised-air glow is several fireballs wide, wider in thin air, only a flash in vacuum, and fades in about a second");

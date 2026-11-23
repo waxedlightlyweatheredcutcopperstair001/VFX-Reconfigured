@@ -122,6 +122,32 @@ namespace VolumetricExplosionFX.Core
         public static double AntimatterGlow(double age) { return age<0?0:Math.Exp(-age/0.12)+0.3*Math.Exp(-age/0.9); }
         public static double AntimatterGlowEnd { get { return 5; } }
 
+        // ---------------- Looks set by other mods ----------------
+        // VFX Reconfigured: another mod (Far Future Weaponry, through EffectsApi.SetPartLook) can give its weapon's explosion
+        // a look: "antimatter" (the antimatter blast at the charge's own yield), "mushroom" (green flames and dark green
+        // smoke). "none" (draw nothing) is handled by the caller. Unknown names change nothing.
+        public const int TintGreen=4;
+        public static bool ApplyLook(FxPlan plan,string look,double tntKg)
+        {
+            if(plan==null||string.IsNullOrEmpty(look)) return false;
+            switch(look.ToLowerInvariant())
+            {
+                case "antimatter":
+                    ApplyAntimatter(plan,Numbers.Positive(tntKg)/AntimatterTntKg(1));
+                    return true;
+                case "mushroom":
+                    plan.Tint=TintGreen; plan.Soot=Math.Max(plan.Soot,0.3); plan.OreKg=0;
+                    plan.SmokeR=0.1; plan.SmokeG=0.26; plan.SmokeB=0.08;
+                    return true;
+            }
+            return false;
+        }
+        // The smoke colour of a green-tinted blast (NukeCloud's cap colour), dark green.
+        public static void GreenSmoke(ref double r,ref double g,ref double b,double share)
+        {
+            r+=(0.09-r)*share; g+=(0.24-g)*share; b+=(0.07-b)*share;
+        }
+
         // ---------------- Graviolium ----------------
         // Lens reach: ~15 m for Blueshift's smallest tank (6.25 units) to ~600 m for its biggest (10,880).
         public static double LensRadius(double units) { return Numbers.Clamp(15*Math.Sqrt(Numbers.Positive(units)/6.25),10,600); }

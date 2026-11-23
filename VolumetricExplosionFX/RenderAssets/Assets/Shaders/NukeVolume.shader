@@ -360,13 +360,19 @@ Shader "VolumetricExplosionFX/NukeVolume"
                 float lum=dot(c,float3(0.3,0.5,0.2));
                 return lerp(c,min(lum*lerp(float3(0.75,0.6,1.3),float3(0.95,0.93,1.05),saturate(t*1.6-0.6)),1),0.9);
             }
+            // VFX Reconfigured: _Reconf.z = 4, green flames asked for by another mod through EffectsApi.
+            float3 GreenFlame(float3 c,float t)
+            {
+                float lum=dot(c,float3(0.3,0.5,0.2));
+                return lerp(c,min(lum*lerp(float3(0.3,1.35,0.25),float3(0.85,1.08,0.6),saturate(t*1.6-0.6)),1),0.9);
+            }
             float3 BlackBody(float t)
             {
                 float3 c=lerp(float3(0.35,0.03,0),float3(1,0.22,0.02),saturate(t*4));
                 c=lerp(c,float3(1,0.5,0.1),saturate(t*4-1));
                 c=lerp(c,float3(1,0.78,0.38),saturate(t*4-2));
                 c=lerp(c,float3(1,0.95,0.88),saturate(t*4-3));
-                return _Reconf.z>0.5?Antimatter(c,t):c;
+                return _Reconf.z>3.5?GreenFlame(c,t):_Reconf.z>0.5?Antimatter(c,t):c;
             }
             float3 Expose(float3 e) { return 1-exp(-e); }
             // The blast wave racing over the ground: the wall of dust it raises at its foot, tallest at the front and

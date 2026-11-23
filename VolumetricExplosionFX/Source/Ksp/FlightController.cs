@@ -189,10 +189,15 @@ namespace VolumetricExplosionFX.Ksp
                     else { warhead.TntKg*=0.03; warhead.RangeM*=0.3; armed=!Warhead.Small(warhead); }
                     duds++;
                 }
-                if(armed) { Warhead.Apply(plan,warhead); warheadParts++; }
+                // VFX Reconfigured: a look asked for by another mod (EffectsApi.SetPartLook): "none" draws no warhead
+                // explosion (that mod draws its own effect), others restyle it.
+                string look=VFXReconfigured.EffectsApi.LookOf(part);
+                if(look!=null) VFXReconfigured.EffectsApi.PartDied(part,where);
+                if(look=="none") armed=false;
+                if(armed) { Warhead.Apply(plan,warhead); if(look!=null) Exotic.ApplyLook(plan,look,warhead.TntKg); warheadParts++; }
                 // VFX Reconfigured: a tank of antimatter or Graviolium (any part holding them) gets its own explosion,
                 // spawned like a warhead's (an armed nuclear warhead keeps its own).
-                ExoticInfo exotic=settings.ExoticFuels?Exotic.Of(s):default(ExoticInfo);
+                ExoticInfo exotic=settings.ExoticFuels&&look!="none"?Exotic.Of(s):default(ExoticInfo);
                 if(exotic.Kind!=ExoticKind.None&&!(armed&&warhead.Kind==WarheadKind.Nuke))
                 {
                     if(exotic.Kind==ExoticKind.Antimatter)
@@ -265,6 +270,7 @@ namespace VolumetricExplosionFX.Ksp
                 if(settings!=null&&settings.Enabled&&!subscribed&&failures==0) Init();
                 if(pool==null) return;
             }
+            VFXReconfigured.EffectsApi.Refresh();
             if(Input.GetKey(KeyCode.LeftAlt)&&Input.GetKeyDown(KeyCode.F8)) overlay=!overlay;
             if(Input.GetKey(KeyCode.LeftAlt)&&Input.GetKeyDown(KeyCode.F7))
             {
@@ -458,6 +464,9 @@ namespace VolumetricExplosionFX.Ksp
             outcome=null;
             {
                 if(pool==null||!settings.Explosions) { outcome=pool==null?"no pool":"explosions off"; return false; }
+                // VFX Reconfigured: a weapon another mod tagged (EffectsApi.SetPartLook): "none" is drawn by that mod.
+                string look=VFXReconfigured.EffectsApi.LookNear(d.Position,d.Info.Kind==WarheadKind.Nuke?250f:40f);
+                if(look=="none") { outcome="drawn by another mod (EffectsApi look none)"; return true; }
                 CelestialBody body=FlightGlobals.currentMainBody;
                 if(body==null) { outcome="no body"; return false; }
                 Vector3d radial=(Vector3d)d.Position-body.position;
@@ -495,6 +504,7 @@ namespace VolumetricExplosionFX.Ksp
                     SnapshotReader.Value(velocity),SnapshotReader.Value(velocity),new Vec3(),new Vec3(size,size,size),Math.Max(d.Info.TntKg*1.6,1),300,new string[0],new ResourceSnapshot[0],env);
                 var e=new DestructionEvent(snapshot,ground?EventKind.GroundImpact:water?EventKind.WaterImpact:EventKind.Destruction,Time.time);
                 FxPlan plan=VisualEnergy.Calculate(e,classifier,settings); Warhead.Apply(plan,d.Info);
+                if(look!=null) Exotic.ApplyLook(plan,look,d.Info.TntKg);
                 // The same charge already drawn (its part died first): one explosion, not two, even when no lobe is added.
                 bool nuclear=d.Info.Kind==WarheadKind.Nuke;
                 if(nuclear)
@@ -798,6 +808,7 @@ namespace VolumetricExplosionFX.Ksp
             cache.Shift(offset);
             if(pool!=null) pool.Shift((Vector3)shift);
             if(stock!=null) stock.Shift(offset);
+            VFXReconfigured.EffectsApi.Shift((Vector3)shift);
         }
         bool ReplaceStock { get { return settings!=null&&settings.Enabled&&settings.ReplaceStockVisuals&&
             (settings.Explosions||settings.Burst||settings.Ground||settings.Water); } }
@@ -856,6 +867,7 @@ namespace VolumetricExplosionFX.Ksp
         void OnDestroy()
         {
             if(active==this) active=null;
+            VFXReconfigured.EffectsApi.Clear();
             if(subscribed)
             {
                 GameEvents.onPartWillDie.Remove(OnWillDie); GameEvents.onPartDie.Remove(OnDie);

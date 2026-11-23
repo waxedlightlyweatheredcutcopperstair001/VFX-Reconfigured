@@ -12,7 +12,7 @@ Player documentation: `package/README.md` (shipped in the mod folder). Changes: 
 |---|---|
 | `VolumetricExplosionFX/` | Volumetric Explosion FX 1.1.1, imported with its full history |
 | `VolumetricGroundFX/` | Volumetric Ground FX 1.1.0, imported with its full history |
-| `src/` | Shared code: assembly info, `ModPaths` (folder layout) |
+| `src/` | Shared code: assembly info, `ModPaths` (folder layout), `AerialPerspective` (haze), `EffectsApi` (public effects for other mods: lens, glow, weapon looks) |
 | `tools/build.py` | Builds `build/VolumetricFXReconfigured.dll` from both source trees |
 | `tools/package.py` | Assembles `build/GameData/VolumetricFXReconfigured`, zips it into `release/`, `--deploy` installs it |
 | `tools/make.py` | Everything in order: explosion shaders (Unity), plugin, tests, package (`--deploy`) |

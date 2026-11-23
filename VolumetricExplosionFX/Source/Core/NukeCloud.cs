@@ -184,6 +184,7 @@ namespace VolumetricExplosionFX.Core
             else { r3=0.76; g3=0.72; b3=0.68; }
             double cr=r1+(r2-r1)*c1, cg=g1+(g2-g1)*c1, cb=b1+(b2-b1)*c1;
             cr+=(r3-cr)*c2; cg+=(g3-cg)*c2; cb+=(b3-cb)*c2;
+            if(plan.Tint==Exotic.TintGreen) Exotic.GreenSmoke(ref cr,ref cg,ref cb,0.85);   // VFX Reconfigured: a green-tinted blast (EffectsApi look)
             double white=1-Smooth(0.03*tf,0.3*tf,age);   // blinding white for the first seconds
             f.Cap=new Vec4(cr,cg,cb,white);
             double fade=Numbers.Clamp(s.Fade,0,1)*(1-0.85*s.Dissolve);

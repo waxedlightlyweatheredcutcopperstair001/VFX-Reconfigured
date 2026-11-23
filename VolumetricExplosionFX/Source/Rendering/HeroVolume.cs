@@ -166,7 +166,7 @@ namespace VolumetricExplosionFX.Rendering
             properties.SetVector(Fire,V(fireball));properties.SetVector(Smoke,V(smoke));
             LookProfile look=VolumeEvolution.Look(plan);
             properties.SetVector(Look0,V(look.Shader0));properties.SetVector(Look1,V(look.Shader1));
-            properties.SetVector(Reconf,new Vector4((float)Reconfig.EdgeGlow,(float)Reconfig.Brightness,plan.Exotic==ExoticKind.Antimatter?1:plan.Exotic==ExoticKind.Lithium?2:plan.Exotic==ExoticKind.SaltWater?3:0,0));   // VFX Reconfigured: glow at the plume's top and edges
+            properties.SetVector(Reconf,new Vector4((float)Reconfig.EdgeGlow,(float)Reconfig.Brightness,plan.Exotic==ExoticKind.Antimatter?1:plan.Exotic==ExoticKind.Lithium?2:plan.Exotic==ExoticKind.SaltWater?3:plan.Tint==Exotic.TintGreen?4:0,0));   // VFX Reconfigured: glow at the plume's top and edges
             // VFX Reconfigured: the air between the camera and the explosion veils it (AerialPerspective).
             float half=(float)State.BoxRadius;
             VFXReconfigured.AerialPerspective.Apply(properties,transform.position-transform.up*half,transform.position+transform.up*half);
