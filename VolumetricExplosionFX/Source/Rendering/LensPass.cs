@@ -14,6 +14,17 @@ namespace VolumetricExplosionFX.Rendering
     {
         internal struct Lens { public Vector3 Position; public Vector4 Shape, Ring; }
         internal struct Glow { public Vector3 Position; public Vector4 Shape; public Color Edge, Core; }
+        // VFX Reconfigured: a sphere tinting what is inside it (TintSphere.shader), for other mods (EffectsApi.TintSphere).
+        internal struct Tint { public Vector3 Centre; public float Radius; public Vector4 Colour, Edge; }
+        static readonly List<Tint> tints=new List<Tint>();
+        static int tintFrame=-1;
+        internal static Material TintMaterial;
+        static readonly int TsSphereId=Shader.PropertyToID("_TsSphere"), TsTintId=Shader.PropertyToID("_TsTint"), TsEdgeId=Shader.PropertyToID("_TsEdge");
+        internal static void RegisterTint(Tint tint)
+        {
+            if(Time.frameCount!=tintFrame) { tints.Clear(); tintFrame=Time.frameCount; }
+            tints.Add(tint);
+        }
         static readonly List<Lens> lenses=new List<Lens>();
         static readonly List<Glow> glows=new List<Glow>();
         static int listFrame=-1, glowFrame=-1;
@@ -41,7 +52,8 @@ namespace VolumetricExplosionFX.Rendering
             if(cam==null||cam!=CameraRig.Near) return;
             bool anyLens=Material!=null&&listFrame==Time.frameCount&&lenses.Count>0;
             bool anyGlow=GlowMaterial!=null&&glowFrame==Time.frameCount&&glows.Count>0;
-            bool any=anyLens||anyGlow;
+            bool anyTint=TintMaterial!=null&&tintFrame==Time.frameCount&&tints.Count>0;
+            bool any=anyLens||anyGlow||anyTint;
             if(!any) { if(buffer!=null) buffer.Clear(); return; }
             if(buffer==null) buffer=new CommandBuffer { name="VFXR gravitational lens" };
             if(attached!=cam)
@@ -62,12 +74,22 @@ namespace VolumetricExplosionFX.Rendering
                 quad.triangles=new[]{0,1,2,0,2,3}; quad.bounds=new Bounds(Vector3.zero,Vector3.one*2e5f);
             }
             buffer.Clear();
-            if(anyGlow)
+            if(anyGlow||anyTint)
             {
                 // (the buffers before this one may have left a full-screen projection and another target)
                 buffer.SetRenderTarget(BuiltinRenderTextureType.CameraTarget);
                 buffer.SetViewProjectionMatrices(cam.worldToCameraMatrix,cam.projectionMatrix);
             }
+            // Tinting spheres first (the flashes and lenses are not tinted): multiply, then the edge added.
+            if(anyTint)
+                for(int i=0;i<tints.Count;i++)
+                {
+                    Tint t=tints[i];
+                    block.Clear(); block.SetVector(TsSphereId,new Vector4(t.Centre.x,t.Centre.y,t.Centre.z,t.Radius));
+                    block.SetVector(TsTintId,t.Colour); block.SetVector(TsEdgeId,t.Edge);
+                    buffer.DrawMesh(quad,Matrix4x4.identity,TintMaterial,0,0,block);
+                    buffer.DrawMesh(quad,Matrix4x4.identity,TintMaterial,0,1,block);
+                }
             if(anyGlow)
                 for(int i=0;i<glows.Count;i++)
                 {
@@ -96,7 +118,7 @@ namespace VolumetricExplosionFX.Rendering
             attached=null;
             if(buffer!=null) { buffer.Release(); buffer=null; }
             if(quad!=null) { Object.Destroy(quad); quad=null; }
-            lenses.Clear(); glows.Clear(); Material=null; GlowMaterial=null;
+            lenses.Clear(); glows.Clear(); tints.Clear(); Material=null; GlowMaterial=null; TintMaterial=null;
         }
     }
 }

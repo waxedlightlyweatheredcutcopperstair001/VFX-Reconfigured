@@ -64,6 +64,9 @@ public static class BuildVolumes
             if(exoticGlow==null || ShaderUtil.ShaderHasError(exoticGlow)) throw new Exception("Exotic glow shader import failed.");
             Shader gravLens=AssetDatabase.LoadAssetAtPath<Shader>("Assets/Shaders/GravLens.shader");
             if(gravLens==null || ShaderUtil.ShaderHasError(gravLens)) throw new Exception("Gravitational lens shader import failed.");
+            // VFX Reconfigured: a sphere tinting what is inside it (EffectsApi.TintSphere, for other mods).
+            Shader tintSphere=AssetDatabase.LoadAssetAtPath<Shader>("Assets/Shaders/TintSphere.shader");
+            if(tintSphere==null || ShaderUtil.ShaderHasError(tintSphere)) throw new Exception("Tint sphere shader import failed.");
             Texture2D smokeA,smokeB; SmokeFlipbook.Ensure(out smokeA,out smokeB);
             BlueNoise.Ensure();
             if(smokeA==null||smokeB==null) throw new Exception("Smoke flipbook generation failed.");
@@ -73,10 +76,10 @@ public static class BuildVolumes
             Directory.CreateDirectory(output);
             var bundle=new AssetBundleBuild { assetBundleName="vefx-"+platform+".unity3d",
                 assetNames=new[]{"Assets/Shaders/HeroVolume.shader","Assets/Shaders/HeroFlare.shader","Assets/Shaders/Particle.shader","Assets/Shaders/HeatDistortion.shader","Assets/Shaders/Debris.shader",NoiseTexture.AssetPath,
-                    "Assets/Shaders/Smoke.shader","Assets/Shaders/PartFragment.shader","Assets/Shaders/Scorch.shader","Assets/Shaders/SmokeShadow.shader","Assets/Shaders/GroundWave.shader","Assets/Shaders/Trail.shader","Assets/Shaders/Flame.shader","Assets/Shaders/FireVolume.shader","Assets/Shaders/Composite.shader","Assets/Shaders/NukeVolume.shader","Assets/Shaders/NukeGlare.shader","Assets/Shaders/CloudProbe.shader","Assets/Shaders/NukeShadow.shader","Assets/Shaders/SplashVolume.shader","Assets/Shaders/ExoticGlow.shader","Assets/Shaders/GravLens.shader",SmokeFlipbook.PathA,SmokeFlipbook.PathB,BlueNoise.AssetPath,FireSimTexture.AssetPath("ground"),FireSimTexture.AssetPath("ground2"),FireSimTexture.AssetPath("ground3"),FireSimTexture.AssetPath("ground4"),FireSimTexture.AssetPath("air"),FireSimTexture.AssetPath("air2"),FireSimTexture.AssetPath("nuke"),FireSimTexture.AssetPath("nuke2"),FireSimTexture.AssetPath("nukeair")} };
+                    "Assets/Shaders/Smoke.shader","Assets/Shaders/PartFragment.shader","Assets/Shaders/Scorch.shader","Assets/Shaders/SmokeShadow.shader","Assets/Shaders/GroundWave.shader","Assets/Shaders/Trail.shader","Assets/Shaders/Flame.shader","Assets/Shaders/FireVolume.shader","Assets/Shaders/Composite.shader","Assets/Shaders/NukeVolume.shader","Assets/Shaders/NukeGlare.shader","Assets/Shaders/CloudProbe.shader","Assets/Shaders/NukeShadow.shader","Assets/Shaders/SplashVolume.shader","Assets/Shaders/ExoticGlow.shader","Assets/Shaders/GravLens.shader","Assets/Shaders/TintSphere.shader",SmokeFlipbook.PathA,SmokeFlipbook.PathB,BlueNoise.AssetPath,FireSimTexture.AssetPath("ground"),FireSimTexture.AssetPath("ground2"),FireSimTexture.AssetPath("ground3"),FireSimTexture.AssetPath("ground4"),FireSimTexture.AssetPath("air"),FireSimTexture.AssetPath("air2"),FireSimTexture.AssetPath("nuke"),FireSimTexture.AssetPath("nuke2"),FireSimTexture.AssetPath("nukeair")} };
             if(BuildPipeline.BuildAssetBundles(output,new[]{bundle},BuildAssetBundleOptions.ForceRebuildAssetBundle|
                 BuildAssetBundleOptions.ChunkBasedCompression,target)==null) throw new Exception("Bundle build failed.");
-            foreach(Shader compiled in new[]{shader,flare,particle,distortion,debris,smoke,fragment,scorch,smokeShadow,groundWave,trail,flame,fire,composite,nukeGlare,cloudProbe,nukeShadow,exoticGlow,gravLens})
+            foreach(Shader compiled in new[]{shader,flare,particle,distortion,debris,smoke,fragment,scorch,smokeShadow,groundWave,trail,flame,fire,composite,nukeGlare,cloudProbe,nukeShadow,exoticGlow,gravLens,tintSphere})
                 foreach(var message in ShaderUtil.GetShaderMessages(compiled))
                     if(message.severity==UnityEditor.Rendering.ShaderCompilerMessageSeverity.Error)
                         throw new Exception(compiled.name+": "+message.message);

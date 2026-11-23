@@ -18,8 +18,12 @@ namespace VFXReconfigured
     /// </summary>
     public static class EffectsApi
     {
-        /// <summary>1: Lens, Glow, SetPartLook. 2: LensCore (the black core's size), SetLookAt (a look for a point).</summary>
-        public const int Version = 2;
+        /// <summary>
+        /// 1: Lens, Glow, SetPartLook. 2: LensCore (the black core's size), SetLookAt (a look for a point).
+        /// 3: TintSphere (a sphere tinting what's inside it, with a visible edge), TimeScale (explosions in a zone slowed
+        /// or stopped).
+        /// </summary>
+        public const int Version = 3;
 
         /// <summary>
         /// A gravitational lens for this frame: the world behind it bent into an Einstein ring round a black core.
@@ -57,6 +61,50 @@ namespace VFXReconfigured
             if (LensPass.GlowMaterial == null || radius <= 0 || power <= 0.003f) return false;
             LensPass.RegisterGlow(new LensPass.Glow { Position = position, Shape = new Vector4(radius, power, Mathf.Clamp01(coreShare), 0), Edge = edge, Core = core });
             return true;
+        }
+
+        /// <summary>
+        /// A sphere for this frame that tints everything inside it (as seen from anywhere: the ground and craft inside,
+        /// not what's beyond), with a crisp rim and a faint lattice on its surface, visible from inside too.
+        /// tint: the colour things are multiplied towards, strength 0-1; edge: the edge's colour, edgeStrength (1 normal).
+        /// </summary>
+        public static bool TintSphere(Vector3 centre, float radius, Color tint, float strength, Color edge, float edgeStrength)
+        {
+            if (LensPass.TintMaterial == null || radius <= 0) return false;
+            LensPass.RegisterTint(new LensPass.Tint
+            {
+                Centre = centre, Radius = radius,
+                Colour = new Vector4(tint.r, tint.g, tint.b, Mathf.Clamp01(strength)),
+                Edge = new Vector4(edge.r, edge.g, edge.b, Mathf.Max(0, edgeStrength))
+            });
+            return true;
+        }
+
+        // ---- Time zones ----
+
+        struct Zone { public Vector3 Centre; public float Radius, Scale; }
+        static readonly List<Zone> zones = new List<Zone>();
+        static int zoneFrame = -1;
+
+        /// <summary>
+        /// For this frame: explosions (their volumes and particles) whose centre is within <paramref name="radius"/> of
+        /// <paramref name="centre"/> run at <paramref name="scale"/> times their speed (0: stopped). Call it every frame
+        /// while it should hold; where zones overlap the slowest wins.
+        /// </summary>
+        public static void TimeScale(Vector3 centre, float radius, float scale)
+        {
+            if (Time.frameCount != zoneFrame) { zones.Clear(); zoneFrame = Time.frameCount; }
+            zones.Add(new Zone { Centre = centre, Radius = Mathf.Max(radius, 0), Scale = Mathf.Clamp01(scale) });
+        }
+
+        /// <summary>The time scale at a point this frame (1 outside every zone).</summary>
+        internal static float ScaleAt(Vector3 at)
+        {
+            if (zoneFrame != Time.frameCount) return 1;
+            float s = 1;
+            foreach (Zone z in zones)
+                if ((at - z.Centre).sqrMagnitude <= z.Radius * z.Radius && z.Scale < s) s = z.Scale;
+            return s;
         }
 
         // ---- Looks ----

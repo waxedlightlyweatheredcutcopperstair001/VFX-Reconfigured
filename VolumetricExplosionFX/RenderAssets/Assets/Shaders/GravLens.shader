@@ -41,8 +41,9 @@ Shader "VolumetricExplosionFX/GravLens"
                 float3 centre=mul(unity_ObjectToWorld,float4(0,0,0,1)).xyz;
                 float3 view=mul(UNITY_MATRIX_V,float4(centre,1)).xyz;
                 float dist=max(-view.z,0.5);
-                // (the eye inside the lens: the whole lens shrinks to stay in front of it)
-                float f=min(1,0.95*dist/max(_Lens.x,1e-3));
+                // (the eye inside the lens: the whole lens shrinks to stay in front of it. VFX Reconfigured: by its reach,
+                // not the quad's size, which grows with the ripple ring: the lens jumped to twice its size when a ring ended)
+                float f=min(1,0.95*dist/max(_Lens.y*1.05,1e-3));
                 float q=_Lens.x*f;
                 float3 v=view; v.xy+=vertex.xy*q;
                 o.pos=mul(UNITY_MATRIX_P,float4(v,1));

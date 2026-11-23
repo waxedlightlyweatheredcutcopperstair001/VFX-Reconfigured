@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.10.0
+- EffectsApi 3 (for Far Future Weaponry's tachyon field):
+  - `TintSphere`: a sphere that tints everything inside it, with a crisp rim and a faint lattice on its surface,
+    visible from inside and out. New shader, `TintSphere.shader`.
+  - `TimeScale`: explosions inside a zone slow down or stop (their volumes and particles), until it lets them go.
+- Gravitational lens (Graviolium tanks, and other mods' lenses): seen from close by, a lens no longer jumps to about
+  twice its size when its ripple ring ends. It shrank to fit the ring's quad; it now shrinks by its own reach.
+- Shaders changed: rebuild with Unity.
+
 ## 0.9.0
 - EffectsApi 2 (for Far Future Weaponry): `LensCore`, a lens with a black core of any size (none at all: bent space
   without a black hole), and `SetLookAt`, a look for explosions near a point for a few seconds.

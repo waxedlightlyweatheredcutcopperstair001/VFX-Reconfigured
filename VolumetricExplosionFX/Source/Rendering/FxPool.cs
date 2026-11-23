@@ -57,7 +57,7 @@ namespace VolumetricExplosionFX.Rendering
                 catch(Exception ex) { slots[0].Clear(); Debug.LogWarning("[VEFX] Particle warm-up skipped: "+ex.GetType().Name); }
             }
             Camera.onPreCull+=OnPreCull; hooked=true;
-            LensPass.Material=volumes.LensMaterial; LensPass.GlowMaterial=volumes.ExoticGlowMaterial;
+            LensPass.Material=volumes.LensMaterial; LensPass.GlowMaterial=volumes.ExoticGlowMaterial; LensPass.TintMaterial=volumes.TintSphereMaterial;
             Debug.Log("[VEFX] Video memory "+VideoMemory+" MB; memory saver "+(SavesMemory?"on":"off")+(s.LowMemory==0?" (automatic)":""));
         }
         bool hooked, memoryFailureLogged;
@@ -416,7 +416,17 @@ namespace VolumetricExplosionFX.Rendering
             bool nearDepth=false, farDepth=false;
             for(int i=0;i<slots.Length;i++) if(slots[i].Active)
             {
-                slots[i].Tick(Mathf.Clamp(dt,0,0.1f),settings,slots[i].Coverage(cam)>0.2f?stepScale:adapt);
+                // VFX Reconfigured: another mod's time zone (EffectsApi.TimeScale: the tachyon field) slows or stops it.
+                if(zoneApplied.Length!=slots.Length) { zoneApplied=new float[slots.Length]; zoneAge=new float[slots.Length]; for(int k=0;k<slots.Length;k++) zoneApplied[k]=1; }
+                float zone=VFXReconfigured.EffectsApi.ScaleAt(slots[i].Root.transform.position);
+                bool fresh=slots[i].Age<zoneAge[i];   // (a new explosion in this slot set its own particle clocks)
+                zoneAge[i]=slots[i].Age;
+                if(fresh&&zone!=1||Mathf.Abs(zone-zoneApplied[i])>0.01f||zone==0&&zoneApplied[i]!=0||zone==1&&zoneApplied[i]!=1)
+                {
+                    zoneApplied[i]=zone;
+                    Speed(slots[i].Root,photo*zone); Speed(slots[i].DebrisRoot,photo*zone); slots[i].SetParticleClock(photo*zone);
+                }
+                slots[i].Tick(Mathf.Clamp(dt*zone,0,0.1f),settings,slots[i].Coverage(cam)>0.2f?stepScale:adapt);
                 Vector3 popAt; float popSize;
                 if(hits!=null&&slots[i].Pop(out popAt,out popSize)) hits.Hit(popAt,slots[i].Root.transform.up,popSize,true,true,false);
                 Vector3 boltA,boltB; float boltWidth;
@@ -473,11 +483,13 @@ namespace VolumetricExplosionFX.Rendering
         readonly CameraShake shake;
         internal int Jolts { get { return shake!=null?shake.Count:0; } }
         float photo=1, photoApplied=-1;
+        float[] zoneApplied=new float[0], zoneAge=new float[0];   // VFX Reconfigured: each slot's time-zone scale last applied to its particles, and its age then
         // Photo mode: VEFX's own clock and its particle systems run slower or stop; the game itself keeps its pace.
         void ApplyPhotoSpeed()
         {
             photoApplied=photo;
-            for(int i=0;i<slots.Length;i++) if(slots[i]!=null) { Speed(slots[i].Root,photo); Speed(slots[i].DebrisRoot,photo); slots[i].SetParticleClock(photo); }
+            if(zoneApplied.Length!=slots.Length) { zoneApplied=new float[slots.Length]; zoneAge=new float[slots.Length]; }
+            for(int i=0;i<slots.Length;i++) if(slots[i]!=null) { Speed(slots[i].Root,photo); Speed(slots[i].DebrisRoot,photo); slots[i].SetParticleClock(photo); zoneApplied[i]=1; }
             debris.SetSpeed(photo);
             if(hits!=null) hits.SetSpeed(photo);
         }
