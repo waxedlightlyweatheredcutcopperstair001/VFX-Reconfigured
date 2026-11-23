@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.11.0
+- A "debris" weapon look for other mods (EffectsApi.SetPartLook; Far Future Weaponry's Tachyon Gun): a part
+  destroyed while tagged breaks apart, drawn as its wreckage only, with no fireball, fire or smoke trail. A warhead or an
+  exotic fuel inside still goes off.
+
 ## 0.10.1
 - Time zones (EffectsApi.TimeScale) now stop fire and smoke too:
   - The fire volumes and flame sheets flickered on the global shader clock. They now run on their own explosion's

@@ -248,6 +248,13 @@ namespace VolumetricExplosionFX.Ksp
                     pendingCharges.Add(new PendingCharge { Cluster=EventCluster.Single(owner,e,plan.VisualEnergyScore), Plan=plan, Where=where,
                         Up=SnapshotReader.Vector(s.Environment.Up), Burst=Mathf.Max((float)Warhead.BurstSize(warhead.TntKg,0),2), Kind=e.Kind });
                 }
+                else if(look=="debris")
+                {
+                    // VFX Reconfigured: the "debris" look (another mod's weapon that breaks parts rather than blowing them
+                    // up: the Tachyon Gun): the wreckage only, no fireball, fire or smoke trail. (A warhead or an exotic
+                    // fuel inside still goes off: those took the branches above.)
+                    owner=VisualReplacementWindows.Covered;
+                }
                 else
                 {
                     owner=clusters.Add(e,plan.VisualEnergyScore,plan.BurnableKg);
@@ -255,7 +262,7 @@ namespace VolumetricExplosionFX.Ksp
                 }
                 if(owner!=0&&ReplaceStock&&pool.InRange(where))
                     stock.Claim(s.Position,now,Numbers.Clamp(s.Dimensions.Length*3,10,45),owner);
-                ScheduleTrail(e,plan,now);
+                if(look!="debris"||armed) ScheduleTrail(e,plan,now);
                 confirmed++;
                 lastEvent=string.Format(System.Globalization.CultureInfo.InvariantCulture,
                     "{0} | {1} | {2} | {3:F0} kg | {4:F1} m/s | score {5:F2} | rho {6:F4} | p {7:F2} kPa",

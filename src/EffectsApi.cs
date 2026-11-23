@@ -14,7 +14,8 @@ namespace VFXReconfigured
     ///
     /// Looks: <see cref="SetPartLook"/> tags a weapon part so its explosion is drawn differently, whichever way it is seen
     /// (the part's destruction or BDArmory's detonation): "antimatter", "mushroom" (green flames, dark green smoke), or
-    /// "none" (nothing drawn: the other mod draws its own effect).
+    /// "none" (nothing drawn: the other mod draws its own effect), or "debris" (a part broken, not blown up: its wreckage
+    /// only, unless it holds a warhead or an exotic fuel).
     /// </summary>
     public static class EffectsApi
     {
