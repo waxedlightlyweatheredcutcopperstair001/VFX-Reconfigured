@@ -23,6 +23,9 @@ Shader "VolumetricExplosionFX/Flame"
             #pragma only_renderers d3d11 glcore metal
             #include "UnityCG.cginc"
             sampler3D _NoiseTex;
+            // VFX Reconfigured: time these flames have missed while slowed or stopped (photo mode, EffectsApi.TimeScale
+            // zones): their flicker runs on _Time.y - _FxLag.
+            float _FxLag;
             float _Width, _Rise, _Intensity, _Opacity, _Steps;
             float4 _VefxUp;
             struct appdata
@@ -93,14 +96,14 @@ Shader "VolumetricExplosionFX/Flame"
                 float age=i.misc.x, seed=i.misc.z;
                 float life=smoothstep(0,0.15,age)*(1-smoothstep(0.55,1,age))*i.color.a*i.misc.w;
                 if(life<0.003) discard;
-                float t=_Time.y*i.misc.y;
+                float t=(_Time.y-_FxLag)*i.misc.y;
                 // Each flame its own kind (they looked like the same cartoon drop everywhere): slim or broad, parted
                 // into two to four tongues higher or lower, hotter and yellower or cooler, redder and sooty at the top; and it
                 // flickers.
                 float v1=frac(seed*0.1371), v2=frac(seed*0.7313), v3=frac(seed*0.4519);
                 float broad=lerp(0.72,1.5,v1), tongues=floor(2+2.99*v2), part=lerp(0.2,0.65,v3), hot=lerp(-0.2,0.14,frac(v1*1.7+v3));
                 float soot=saturate(-hot*4)*0.8;
-                float flick=0.8+0.4*tex3Dlod(_NoiseTex,float4(_Time.y*0.9+seed*0.13,seed*0.29,0.61,0)).r;
+                float flick=0.8+0.4*tex3Dlod(_NoiseTex,float4((_Time.y-_FxLag)*0.9+seed*0.13,seed*0.29,0.61,0)).r;
                 float3 ax=normalize(abs(up.y)<0.99?cross(up,float3(0,1,0)):cross(up,float3(1,0,0))), az=cross(up,ax);
                 float steps=min(i.steps,clamp(_Steps,6,32)), dt=(t1-t0)/steps;
                 float2 px=floor(i.pos.xy);

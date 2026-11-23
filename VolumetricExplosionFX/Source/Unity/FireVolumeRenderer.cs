@@ -5,7 +5,7 @@ namespace VolumetricExplosionFX.Rendering
 {
     internal sealed class FireVolumeRenderer
     {
-        static readonly int BlobsId=Shader.PropertyToID("_Blobs");
+        static readonly int BlobsId=Shader.PropertyToID("_Blobs"), LagId=Shader.PropertyToID("_FxLag");   // (VFX Reconfigured: time missed while slowed)
         static readonly int BoxId=Shader.PropertyToID("_Box"), FireId=Shader.PropertyToID("_Fire"), LeanId=Shader.PropertyToID("_Lean"), PatchId=Shader.PropertyToID("_Patchy"),StreakId=Shader.PropertyToID("_Streak");
         readonly Transform transform;
         readonly MeshRenderer renderer;
@@ -128,7 +128,7 @@ namespace VolumetricExplosionFX.Rendering
             }
             return n;
         }
-        internal void Tick(float level,float flame,double puffHz,float steps,float flicker)
+        internal void Tick(float level,float flame,double puffHz,float steps,float flicker,float lag=0)
         {
             visible=level>0.01f;
             if(!visible) { renderer.enabled=false; return; }
@@ -137,6 +137,7 @@ namespace VolumetricExplosionFX.Rendering
             block.SetVector(FireId,new Vector4(radius,Mathf.Min(flame,2*halfHeight/1.75f),Mathf.Clamp01(level),(float)puffHz));
             block.SetVector(LeanId,new Vector4(localLean.x,localLean.y,rise,flicker));
             block.SetFloat(PatchId,patchy);
+            block.SetFloat(LagId,lag);
             block.SetVectorArray(BlobsId,pools);
             renderer.SetPropertyBlock(block);
         }

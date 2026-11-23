@@ -27,6 +27,9 @@ Shader "VolumetricExplosionFX/FireVolume"
             #include "VolumeDepth.cginc"
             UNITY_DECLARE_DEPTH_TEXTURE(_CameraDepthTexture);
             sampler3D _NoiseTex;
+            // VFX Reconfigured: time this fire has missed while slowed or stopped (photo mode, EffectsApi.TimeScale zones):
+            // its flicker runs on _Time.y - _FxLag, so it stops with the rest of the explosion.
+            float _FxLag;
             sampler2D _BlueNoise;
             float4 _Box, _Fire, _Lean, _Streak;
             float _Intensity, _Patchy;
@@ -72,7 +75,7 @@ Shader "VolumetricExplosionFX/FireVolume"
                     if(y>1.8) return 0;
                 }
                 if(rad>1.5) return 0;
-                float t=_Time.y*_Lean.z, s=_Box.w;
+                float t=(_Time.y-_FxLag)*_Lean.z, s=_Box.w;
                 float tall=1;
                 if(_Patchy>0)
                 {
@@ -92,7 +95,7 @@ Shader "VolumetricExplosionFX/FireVolume"
                 float turb=saturate((a.r*0.65+b.g*0.35-0.5)*2.6+0.5);
                 float width=lerp(1.0,0.35,saturate(y/1.5))*(0.8+0.4*e.a);
                 float env=saturate((width-rad+(w.x+w.z)*0.15)/(0.35*width+0.05));
-                float puff=sin(6.2832*(_Fire.w*_Time.y-y*1.3)+e.b*5)*0.5+0.5;
+                float puff=sin(6.2832*(_Fire.w*(_Time.y-_FxLag)-y*1.3)+e.b*5)*0.5+0.5;
                 float thresh=lerp(0.12,0.85,saturate(y/1.35))-puff*0.18*saturate(y*2)+(1-env)*0.6;
                 float D=saturate((turb-thresh)*3.2)*_Fire.z;
                 heat=saturate(((1.1-0.5*y)*(0.8+0.32*b.b)+0.15*(turb-0.5))*(0.5+0.5*saturate(D*2.2))*(0.75+0.25*_Fire.z));

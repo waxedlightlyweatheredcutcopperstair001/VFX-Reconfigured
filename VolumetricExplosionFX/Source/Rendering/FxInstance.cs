@@ -448,6 +448,31 @@ namespace VolumetricExplosionFX.Rendering
         }
         /// <summary>VFX Reconfigured: reapply the particle clocks after photo mode changed every system's speed.</summary>
         internal void SetParticleClock(float photo) { if(plan!=null) particles.SetClock(photo); }
+
+        /// <summary>
+        /// VFX Reconfigured: time this explosion has missed while slowed or stopped (photo mode, EffectsApi.TimeScale
+        /// zones), for the shaders that flicker on the global shader clock (fire volumes, flame sheets): they run on
+        /// _Time.y - _FxLag. FxPool adds to it; a new explosion in the slot starts again from 0.
+        /// </summary>
+        internal float TimeLag;
+        float lagApplied;
+        static readonly int FxLagId=Shader.PropertyToID("_FxLag");
+        static readonly MaterialPropertyBlock lagBlock=new MaterialPropertyBlock();
+        internal void ApplyTimeLag()
+        {
+            if(Mathf.Abs(TimeLag-lagApplied)<1e-4f) return;
+            lagApplied=TimeLag;
+            foreach(GameObject root in new[]{Root,DebrisRoot})
+            {
+                if(root==null) continue;
+                foreach(ParticleSystemRenderer r in root.GetComponentsInChildren<ParticleSystemRenderer>(true))
+                {
+                    Material m=r.sharedMaterial;
+                    if(m==null||m.shader==null||!m.shader.name.EndsWith("Flame")) continue;
+                    r.GetPropertyBlock(lagBlock); lagBlock.SetFloat(FxLagId,TimeLag); r.SetPropertyBlock(lagBlock);
+                }
+            }
+        }
         // Secondary explosions in the burning wreck, handed out as they fall due: where (world) and how big (m).
         readonly Aftermath.Pop[] pops=new Aftermath.Pop[5];
         int popCount, popNext;
@@ -542,7 +567,7 @@ namespace VolumetricExplosionFX.Rendering
                 float flame=(float)residue.FlameHeight*(0.55f+0.45f*Mathf.Sqrt(level));
                 float wobble=1+0.08f*Mathf.Sin(age*9.1f+flickerPhase);
                 fireVolume.Advance(dt);
-                fireVolume.Tick(level,flame,residue.PuffHz,Mathf.Max(24,64*Mathf.Clamp(stepScale,0.4f,1)),wobble);
+                fireVolume.Tick(level,flame,residue.PuffHz,Mathf.Max(24,64*Mathf.Clamp(stepScale,0.4f,1)),wobble,TimeLag);
                 fireTarget=CameraRig.Pick(fireVolume.Center,fireVolume.Reach);
             }
             particles.Tick(age,dt,residue.HasFire?0:groundFire,HasVolume,volume!=null?volume.State:default(VolumeState));

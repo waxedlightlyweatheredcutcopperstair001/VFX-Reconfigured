@@ -37,6 +37,7 @@ namespace VolumetricExplosionFX.Rendering
             internal readonly MaterialPropertyBlock Properties=new MaterialPropertyBlock();
             internal Material[] Skins;
             internal bool Active, Inertial; internal float Age, End;
+            internal float Zone=1;   // VFX Reconfigured: the time-zone scale last applied to its particles (EffectsApi.TimeScale)
             internal CelestialBody Body; internal double Latitude, Longitude, Altitude; internal Vector3d Velocity;
             internal int Pieces;
         }
@@ -210,11 +211,16 @@ namespace VolumetricExplosionFX.Rendering
             {
                 Batch b=batches[i];
                 if(b==null||!b.Active) continue;
-                b.Age+=dt;
-                if(b.Inertial) b.Root.transform.position+=(Vector3)((b.Velocity-Krakensbane.GetFrameVelocity())*dt);
+                // VFX Reconfigured: wreckage inside another mod's time zone (the tachyon field) slows and stops with it:
+                // its flight, its fires and smoke trails. (Krakensbane's frame still moves it while stopped.)
+                float zone=VFXReconfigured.EffectsApi.ScaleAt(b.Root.transform.position);
+                if(Mathf.Abs(zone-b.Zone)>0.01f||zone==0&&b.Zone!=0||zone==1&&b.Zone!=1) { b.Zone=zone; FxPool.Speed(b.Root,photoSpeed*zone); }
+                float bdt=dt*zone;
+                b.Age+=bdt;
+                if(b.Inertial) b.Root.transform.position+=(Vector3)((b.Velocity*zone-Krakensbane.GetFrameVelocity())*dt);
                 else if(b.Body!=null) b.Root.transform.position=(Vector3)b.Body.GetWorldSurfacePosition(b.Latitude,b.Longitude,b.Altitude);
                 b.Properties.SetFloat(AgeId,b.Age); b.Renderer.SetPropertyBlock(b.Properties);
-                if(b.Fire!=null) b.Trails.Tick(b.Age,dt,b.Fire,b.Smoke,b.Flames);
+                if(b.Fire!=null) b.Trails.Tick(b.Age,bdt,b.Fire,b.Smoke,b.Flames);
                 if(b.Tracers!=null&&b.Traced.Count>0)
                 {
                     for(int k=0;k<b.Traced.Count;k++)
@@ -239,6 +245,7 @@ namespace VolumetricExplosionFX.Rendering
             b.Latitude=job.Latitude; b.Longitude=job.Longitude; b.Altitude=job.Altitude;
             float life=job.Inertial?Mathf.Min((float)settings.ResidueSeconds,30):(float)settings.ResidueSeconds;
             b.End=Mathf.Max(life,8); b.Age=age; b.Pieces=job.Cut.Count;
+            if(b.Zone!=1) { b.Zone=1; FxPool.Speed(b.Root,photoSpeed); }
             b.Properties.Clear();
             b.Properties.SetFloat(AgeId,age); b.Properties.SetFloat(GravityId,(float)job.Gravity);
             b.Properties.SetVector(LifeId,new Vector4(b.End-4,b.End,0,0)); b.Properties.SetFloat(CoolId,job.Air>0.05f?1.8f:1.4f);
@@ -420,8 +427,11 @@ namespace VolumetricExplosionFX.Rendering
             b.Mesh.Clear();
             b.Root.SetActive(false);
         }
+        float photoSpeed=1;
         internal void SetSpeed(float speed)
         {
+            photoSpeed=speed;
+            for(int i=0;i<batches.Length;i++) if(batches[i]!=null) batches[i].Zone=1;
             for(int i=0;i<batches.Length;i++) if(batches[i]!=null) FxPool.Speed(batches[i].Root,speed);
         }
         internal void Shift(Vector3 offset)

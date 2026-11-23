@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.10.1
+- Time zones (EffectsApi.TimeScale) now stop fire and smoke too:
+  - The fire volumes and flame sheets flickered on the global shader clock. They now run on their own explosion's
+    clock (`_FxLag`, the time it has missed). That also makes photo mode freeze them.
+  - Flying wreckage, its fires and smoke trails slow and stop inside a zone.
+- Shaders changed (FireVolume, Flame): rebuild with Unity.
+
 ## 0.10.0
 - EffectsApi 3 (for Far Future Weaponry's tachyon field):
   - `TintSphere`: a sphere that tints everything inside it, with a crisp rim and a faint lattice on its surface,

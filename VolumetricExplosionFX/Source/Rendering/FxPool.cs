@@ -387,6 +387,7 @@ namespace VolumetricExplosionFX.Rendering
         }
         internal void Tick(float dt)
         {
+            float rawDt=Mathf.Clamp(dt,0,0.1f);   // (VFX Reconfigured: for the time the slowed explosions miss)
             photo=(float)FxSettings.PhotoSpeed(settings.PhotoMode);
             if(photo!=photoApplied||photo!=1&&Time.unscaledTime>photoCheck) { photoCheck=Time.unscaledTime+1; ApplyPhotoSpeed(); }
             dt*=photo;
@@ -421,6 +422,9 @@ namespace VolumetricExplosionFX.Rendering
                 float zone=VFXReconfigured.EffectsApi.ScaleAt(slots[i].Root.transform.position);
                 bool fresh=slots[i].Age<zoneAge[i];   // (a new explosion in this slot set its own particle clocks)
                 zoneAge[i]=slots[i].Age;
+                if(fresh) slots[i].TimeLag=0;
+                slots[i].TimeLag+=rawDt*(1-photo*zone);
+                slots[i].ApplyTimeLag();
                 if(fresh&&zone!=1||Mathf.Abs(zone-zoneApplied[i])>0.01f||zone==0&&zoneApplied[i]!=0||zone==1&&zoneApplied[i]!=1)
                 {
                     zoneApplied[i]=zone;
