@@ -165,7 +165,10 @@ namespace VolumetricExplosionFX.Ksp
                 if(e==null) { missingSnapshots++;return; }
                 PartSnapshot s=e.Part;
                 FxPlan plan=VisualEnergy.Calculate(e,classifier,settings);
-                pool.CaptureDebris(part,e,plan);
+                // VFX Reconfigured: a look asked for by another mod (EffectsApi.SetPartLook): "none" draws neither the
+                // warhead's explosion nor the part's wreckage (that mod draws its own effect), others restyle the explosion.
+                string look=VFXReconfigured.EffectsApi.LookOf(part);
+                if(look!="none") pool.CaptureDebris(part,e,plan);
                 Vector3 below;
                 if(e.Kind==EventKind.Destruction&&!s.Environment.Splashed&&settings.Ground&&
                     SnapshotReader.GroundBelow(SnapshotReader.Vector(s.Position),SnapshotReader.Vector(s.Environment.Up),
@@ -189,9 +192,6 @@ namespace VolumetricExplosionFX.Ksp
                     else { warhead.TntKg*=0.03; warhead.RangeM*=0.3; armed=!Warhead.Small(warhead); }
                     duds++;
                 }
-                // VFX Reconfigured: a look asked for by another mod (EffectsApi.SetPartLook): "none" draws no warhead
-                // explosion (that mod draws its own effect), others restyle it.
-                string look=VFXReconfigured.EffectsApi.LookOf(part);
                 if(look!=null) VFXReconfigured.EffectsApi.PartDied(part,where);
                 if(look=="none") armed=false;
                 if(armed) { Warhead.Apply(plan,warhead); if(look!=null) Exotic.ApplyLook(plan,look,warhead.TntKg); warheadParts++; }

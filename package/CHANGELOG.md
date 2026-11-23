@@ -3,8 +3,8 @@
 ## 0.8.0
 - Effects for other mods (Far Future Weaponry): a public `VFXReconfigured.EffectsApi` with a gravitational lens and a
   glow (drawn over everything, like the Graviolium lens and exotic flashes) and weapon looks. A weapon part can be tagged
-  "antimatter" (the antimatter blast at its own yield), "mushroom" (green flames, dark green smoke) or "none" (nothing
-  drawn: the other mod draws its own effect).
+  "antimatter" (the antimatter blast at its own yield), "mushroom" (green flames, dark green smoke) or "none" (no explosion
+  or wreckage drawn: the other mod draws its own effect).
 - Green flames in the explosion and nuclear shaders, for the mushroom look (shaders changed: rebuild with Unity).
 
 ## 0.7.0
