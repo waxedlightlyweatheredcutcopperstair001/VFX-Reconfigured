@@ -1,4 +1,4 @@
-# Volumetric FX Reconfigured 0.8.0
+# Volumetric FX Reconfigured 0.9.0
 
 Volumetric explosions, fire, smoke and wreckage, and volumetric engine dust and steam, for Kerbal Space Program
 1.12.5, in one mod. Based on **Volumetric Explosion FX** 1.1.1 and **Volumetric Ground FX** 1.1.0 by Warnix (both MIT),

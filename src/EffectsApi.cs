@@ -18,15 +18,22 @@ namespace VFXReconfigured
     /// </summary>
     public static class EffectsApi
     {
-        /// <summary>1: Lens, Glow, SetPartLook.</summary>
-        public const int Version = 1;
+        /// <summary>1: Lens, Glow, SetPartLook. 2: LensCore (the black core's size), SetLookAt (a look for a point).</summary>
+        public const int Version = 2;
 
         /// <summary>
         /// A gravitational lens for this frame: the world behind it bent into an Einstein ring round a black core.
         /// radius: its reach (m); strength 0-1 (0: no lens; 1: Einstein ring at 0.4 radius, black core at 0.13 radius);
         /// ringRadius/ringAmp: a stretch-and-squeeze ring rippling outward (m, 0-1.2; 0 for none).
         /// </summary>
-        public static bool Lens(Vector3 position, float radius, float strength, float ringRadius, float ringAmp)
+        public static bool Lens(Vector3 position, float radius, float strength, float ringRadius, float ringAmp) =>
+            LensCore(position, radius, strength, 0.13f, ringRadius, ringAmp);
+
+        /// <summary>
+        /// As <see cref="Lens"/>, with the black core's radius as a share of the radius at full strength (0.13 in Lens; 0
+        /// for none: bent space without a black hole).
+        /// </summary>
+        public static bool LensCore(Vector3 position, float radius, float strength, float coreShare, float ringRadius, float ringAmp)
         {
             if (LensPass.Material == null || radius <= 0) return false;
             float k = Mathf.Clamp01(strength);
@@ -35,7 +42,7 @@ namespace VFXReconfigured
             LensPass.Register(new LensPass.Lens
             {
                 Position = position,
-                Shape = new Vector4(q, radius, 0.4f * radius * k, 0.13f * radius * k),
+                Shape = new Vector4(q, radius, 0.4f * radius * k, Mathf.Clamp(coreShare, 0, 0.4f) * radius * k),
                 Ring = new Vector4(ringRadius, Mathf.Max(ringAmp, 0), k, k)
             });
             return true;
@@ -60,6 +67,7 @@ namespace VFXReconfigured
             public string Look;
             public Vector3 Where;
             public double DiedAt = -1;
+            public float Within = -1;     // a point tag's own reach (SetLookAt); parts use the caller's
         }
 
         static readonly Dictionary<int, Tag> tags = new Dictionary<int, Tag>();
@@ -73,6 +81,20 @@ namespace VFXReconfigured
             if (string.IsNullOrEmpty(look)) { tags.Remove(id); return; }
             tags[id] = new Tag { Part = part, Look = look.ToLowerInvariant(), Where = part.transform.position };
         }
+
+        /// <summary>
+        /// A look for any explosion within <paramref name="within"/> m of a point over the next <paramref name="seconds"/>
+        /// (an explosion the other mod sets off itself, e.g. through BDArmory, that it draws its own way).
+        /// </summary>
+        public static void SetLookAt(Vector3 position, float within, string look, float seconds)
+        {
+            if (string.IsNullOrEmpty(look)) return;
+            int id = --pointIds;
+            tags[id] = new Tag { Part = null, Look = look.ToLowerInvariant(), Where = position, Within = Mathf.Max(within, 1),
+                                 DiedAt = Time.time - 5 + Mathf.Clamp(seconds, 0.1f, 5) };
+        }
+
+        static int pointIds;
 
         /// <summary>The look a part was tagged with, or null.</summary>
         internal static string LookOf(Part part)
@@ -89,16 +111,21 @@ namespace VFXReconfigured
             t.DiedAt = Time.time;
         }
 
-        /// <summary>The look of a tagged part at or near this point (alive, or died in the last 5 s), or null.</summary>
+        /// <summary>
+        /// The look of a tagged part that died at or near this point in the last 5 s (a part still in one piece, e.g. a
+        /// bomb still on its plane, says nothing about explosions near it), or of a point tag, or null.
+        /// </summary>
         internal static string LookNear(Vector3 position, float within)
         {
             string best = null;
             float bestD = within * within;
             foreach (Tag t in tags.Values)
             {
+                if (t.Part != null && t.DiedAt < 0) continue;
                 Vector3 at = t.Part != null ? t.Part.transform.position : t.Where;
                 float d = (at - position).sqrMagnitude;
-                if (d <= bestD) { bestD = d; best = t.Look; }
+                if (t.Within > 0 && d > t.Within * t.Within) continue;
+                if (d <= bestD || t.Within > 0) { bestD = Mathf.Min(bestD, d); best = t.Look; }
             }
             return best;
         }
@@ -123,6 +150,12 @@ namespace VFXReconfigured
         internal static void Shift(Vector3 by)
         {
             foreach (Tag t in tags.Values) if (t.Part == null) t.Where -= by;
+        }
+
+        /// <summary>Drop a part's tag (its warhead didn't go off: its look must not touch explosions near where it broke).</summary>
+        internal static void Forget(Part part)
+        {
+            if (part != null) tags.Remove(part.GetInstanceID());
         }
 
         internal static void Clear() => tags.Clear();

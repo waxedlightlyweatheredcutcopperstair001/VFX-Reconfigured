@@ -1278,6 +1278,8 @@ class Program
                 Check(Exotic.ApplyLook(amLook,"Antimatter",amBig.TntKg)&&amLook.Exotic==ExoticKind.Antimatter&&
                     Math.Abs(amLook.ExoticUnits-300000)<1e-3*300000&&amLook.Soot<=0.04,
                     "The antimatter look is the antimatter blast, at the charge's own yield (units worked back from its TNT)");
+                Check(amLook.PinkFlash&&amLook.SmokeScale<0.6&&amLook.SmokeScale>0&&!nukeAm.PinkFlash&&nukeAm.SmokeScale==1,
+                    "The antimatter weapon look has a pink flash and a thinner cloud; an antimatter tank keeps its own");
                 var green=new FxPlan{ Atmosphere=1, Look=LookProfile.Default(LookKind.Tank) }; Warhead.Apply(green,amBig);
                 Check(Exotic.ApplyLook(green,"mushroom",amBig.TntKg)&&green.Tint==Exotic.TintGreen&&green.SmokeG>green.SmokeR*2&&green.SmokeG>green.SmokeB*2&&green.SmokeG<0.4,
                     "The mushroom look: green flames and dark green smoke");

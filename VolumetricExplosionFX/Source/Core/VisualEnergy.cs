@@ -37,6 +37,8 @@ namespace VolumetricExplosionFX.Core
         public ExoticKind Exotic; public double ExoticUnits, ExoticKg;
         // VFX Reconfigured: a flame colour set by another mod through EffectsApi looks (Exotic.ApplyLook): 0 none, 4 green.
         public int Tint;
+        // VFX Reconfigured: set by the "antimatter" weapon look: the cloud's opacity (1 normal) and a pink flash.
+        public double SmokeScale=1; public bool PinkFlash;
         // VFX Reconfigured: a stream of sparks, flames and smoke after the blast (battery venting, burning lithium).
         public SparkSpec Sparks;
     }

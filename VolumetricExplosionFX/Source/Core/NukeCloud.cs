@@ -258,6 +258,14 @@ namespace VolumetricExplosionFX.Core
                 double js=Smooth(0.01*tf,0.12*tf,age)*(1-Smooth(0.6*tf,1.8*tf,age));
                 f.Jets=new Vec4(re/box,0,js,0);
             }
+            // VFX Reconfigured: a thinner cloud when a look asks for it (EffectsApi "antimatter" weapon look).
+            if(plan.SmokeScale<1)
+            {
+                double k=Numbers.Clamp(plan.SmokeScale,0,1);
+                f.Heat=new Vec4(f.Heat.X,f.Heat.Y*k,f.Heat.Z,f.Heat.W);
+                f.Stem=new Vec4(f.Stem.X,f.Stem.Y,f.Stem.Z,f.Stem.W*k);
+                f.Skirt=new Vec4(f.Skirt.X,f.Skirt.Y,f.Skirt.Z*k,f.Skirt.W);
+            }
             return f;
         }
     }

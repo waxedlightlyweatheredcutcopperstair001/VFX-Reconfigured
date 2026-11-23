@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.0
+- EffectsApi 2 (for Far Future Weaponry): `LensCore`, a lens with a black core of any size (none at all: bent space
+  without a black hole), and `SetLookAt`, a look for explosions near a point for a few seconds.
+- The "antimatter" weapon look: a pink flash and a cloud at under half the opacity. Antimatter tanks are unchanged.
+- Fixes for weapon looks: a "none" bomb broken unarmed shows its ordinary wreckage (it showed nothing), and a tagged
+  bomb still on its plane no longer hides explosions near it.
+
 ## 0.8.0
 - Effects for other mods (Far Future Weaponry): a public `VFXReconfigured.EffectsApi` with a gravitational lens and a
   glow (drawn over everything, like the Graviolium lens and exotic flashes) and weapon looks. A weapon part can be tagged

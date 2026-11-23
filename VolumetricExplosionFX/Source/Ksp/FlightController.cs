@@ -168,6 +168,8 @@ namespace VolumetricExplosionFX.Ksp
                 // VFX Reconfigured: a look asked for by another mod (EffectsApi.SetPartLook): "none" draws neither the
                 // warhead's explosion nor the part's wreckage (that mod draws its own effect), others restyle the explosion.
                 string look=VFXReconfigured.EffectsApi.LookOf(part);
+                // ("none" only when the warhead really went off: a bomb broken unarmed is ordinary wreckage)
+                if(look=="none"&&(combat==null||combat.WillDetonate(part)!=true)) { VFXReconfigured.EffectsApi.Forget(part); look=null; }
                 if(look!="none") pool.CaptureDebris(part,e,plan);
                 Vector3 below;
                 if(e.Kind==EventKind.Destruction&&!s.Environment.Splashed&&settings.Ground&&

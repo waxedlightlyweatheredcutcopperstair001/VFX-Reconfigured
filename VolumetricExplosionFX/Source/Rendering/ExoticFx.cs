@@ -14,7 +14,7 @@ namespace VolumetricExplosionFX.Rendering
         readonly MaterialPropertyBlock[] props=new MaterialPropertyBlock[MaxGlows];
         readonly float[] intensity=new float[MaxGlows];
         static readonly int GlowId=Shader.PropertyToID("_ExGlow"), EdgeId=Shader.PropertyToID("_ExEdge"), CoreId=Shader.PropertyToID("_ExCore");
-        ExoticKind kind; double units, kg; float fireball, air, end;
+        ExoticKind kind; double units, kg; float fireball, air, end; bool pink;
         // A battery's arc flash (not an exotic fuel, drawn here too), and whether the glows are drawn over everything
         // (LensPass) instead of in the transparent pass: the short flashes are, the lithium fire's lasting glare isn't.
         bool battery, overlay; uint arcSeed;
@@ -50,6 +50,7 @@ namespace VolumetricExplosionFX.Rendering
         internal void Begin(FxPlan plan,double fireballRadius,float air,uint seed)
         {
             kind=plan!=null?plan.Exotic:ExoticKind.None; units=plan!=null?plan.ExoticUnits:0; kg=plan!=null?plan.ExoticKg:0;
+            pink=plan!=null&&plan.PinkFlash;   // VFX Reconfigured: the antimatter weapon look's pink flash
             fireball=Mathf.Max((float)fireballRadius,1); this.air=air; LightBoost=0; pulses=0;
             battery=kind==ExoticKind.None&&plan!=null&&plan.PartKind==PartKind.Battery&&plan.Sparks!=null&&plan.ElectricFraction>0.01;
             overlay=kind!=ExoticKind.Lithium; arcSeed=seed;
@@ -109,8 +110,16 @@ namespace VolumetricExplosionFX.Rendering
                     float scale=(float)Exotic.AntimatterGlowScale(air), R=fireball*scale;
                     float dim=air<0.01f?1:Mathf.Clamp(Mathf.Sqrt(air),0.35f,1);
                     float p=(float)Exotic.AntimatterGlow(age)*dim;
-                    Set(0,R,p,Mathf.Clamp(0.6f/scale,0.05f,0.5f),new Color(0.45f,0.38f,1f),new Color(0.95f,0.92f,1f));
-                    LightBoost=p*8; LightColour=new Color(0.72f,0.62f,1f); LightRange=R*3;
+                    if(pink)
+                    {
+                        Set(0,R,p,Mathf.Clamp(0.6f/scale,0.05f,0.5f),new Color(1f,0.3f,0.75f),new Color(1f,0.85f,0.95f));
+                        LightBoost=p*8; LightColour=new Color(1f,0.55f,0.85f); LightRange=R*3;
+                    }
+                    else
+                    {
+                        Set(0,R,p,Mathf.Clamp(0.6f/scale,0.05f,0.5f),new Color(0.45f,0.38f,1f),new Color(0.95f,0.92f,1f));
+                        LightBoost=p*8; LightColour=new Color(0.72f,0.62f,1f); LightRange=R*3;
+                    }
                     break;
                 }
                 case ExoticKind.Graviolium:

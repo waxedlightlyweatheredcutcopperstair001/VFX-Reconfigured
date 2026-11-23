@@ -133,7 +133,9 @@ namespace VolumetricExplosionFX.Core
             switch(look.ToLowerInvariant())
             {
                 case "antimatter":
+                    // (a weapon's antimatter blast: a pink flash and a thinner cloud than a tank's)
                     ApplyAntimatter(plan,Numbers.Positive(tntKg)/AntimatterTntKg(1));
+                    plan.SmokeScale=0.45; plan.PinkFlash=true;
                     return true;
                 case "mushroom":
                     plan.Tint=TintGreen; plan.Soot=Math.Max(plan.Soot,0.3); plan.OreKg=0;
