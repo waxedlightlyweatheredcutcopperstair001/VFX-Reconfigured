@@ -19,25 +19,33 @@ Shader "VolumetricExplosionFX/Composite"
             float _VefxCompositeSpread;   // tap offset in texels (0.6 reduced resolution, wider at full resolution)
             sampler2D _VefxOverlay, _VefxOverlayZ; float _VefxOverlayOn;   // 1.1: engine flames in front of the clouds, drawn again over them
             // 1.1: hidden behind another mod's clouds (LowResVolumes).
-            sampler2D _VefxLowResFront, _VefxPreClouds, _VefxAfterAlpha; float4 _VefxLowResFront_TexelSize;
-            float _VefxCloudOcc; float4 _VefxCloudBands, _VefxPlanet, _VefxEye; float4x4 _VefxFrustum;
-            // 1 where the whole layer lies between the eye and the point (eye above its top and point under its base, or the
-            // reverse): any cloud on that pixel is then in front. (where a cloud could also be behind, nothing is
-            // hidden: a layer only overlapping the way hid explosions in front of clouds behind them.)
-            // VFX Reconfigured: a point inside the band is hidden in part, by how deep in it it lies (seen from above: the cloud
-            // seen is mostly the deck below the band's top; innerTop, the lowest top of the merged layers, is where most of
-            // it is. Seen from below: the cloud base, flat, within a kilometre above the band's bottom). A thick band (a
-            // cumulus deck with cumulonimbus to 11 km) otherwise hid nothing of a nuclear stem standing in it.
-            float4 _VefxCloudTops;
-            float Between(float ha,float hb,float2 band,float innerTop)
+            // VFX Reconfigured 0.11.1: EVE's own cloud image (alpha: the light that gets through the clouds on the pixel,
+            // white where there are none) and the layers' altitudes: the share of the ray's cloud in front of the volume's
+            // front is the share of the ray's length inside the layers that lies before the front (up to the scene's depth,
+            // as EVE marches), and the volume is dimmed by alpha ^ share (Beer-Lambert, even density along the ray).
+            sampler2D _VefxLowResFront, scattererReconstructedCloud; float4 _VefxLowResFront_TexelSize;
+            UNITY_DECLARE_DEPTH_TEXTURE(_CameraDepthTexture);
+            float _VefxCloudOcc; float4 _VefxCloudLo, _VefxCloudHi, _VefxEyeUp, _VefxPlanetRadius; float4x4 _VefxFrustum;
+            // Length of the ray [0, len] inside the sphere of altitude h (radius R + h); the eye at altitude alt, b = the
+            // eye's distance from the centre times the cosine of the ray to the zenith. (The altitude difference is exact:
+            // the sphere's equation written from it keeps float precision at a planet's radius.)
+            float InSphere(float b,float alt,float h,float R,float len)
             {
-                if(band.y<=band.x) return 0;
-                float it=innerTop>band.x?innerTop:band.y;
-                float deep=0.5*saturate((band.y-hb)/(band.y-band.x))+0.5*saturate((it-hb)/max(it-band.x,1));
-                float up=saturate((ha-band.y)/150)*deep, down=saturate((band.x-ha)/150)*saturate((hb-band.x)/1000);
-                return max(up,down);
+                float q=(alt-h)*(2*R+alt+h);
+                float disc=b*b-q;
+                if(disc<=0) return 0;
+                float s=sqrt(disc);
+                return max(min(-b+s,len)-max(-b-s,0),0);
             }
-            float CloudCover(float2 uv)
+            float InLayers(float b,float alt,float R,float len)
+            {
+                float sum=0;
+                [unroll] for(int k=0;k<4;k++)
+                    if(_VefxCloudHi[k]>_VefxCloudLo[k]) sum+=max(InSphere(b,alt,_VefxCloudHi[k],R,len)-InSphere(b,alt,_VefxCloudLo[k],R,len),0);
+                return sum;
+            }
+            // How much of the volume still shows through EVE's clouds in front of it (1: none in front).
+            float CloudThrough(float2 uv)
             {
                 // (the thin fringe has no front of its own: the nearest of its neighbours' is taken, or it showed as an outline)
                 float4 f=tex2D(_VefxLowResFront,uv);
@@ -46,31 +54,26 @@ Shader "VolumetricExplosionFX/Composite"
                 g=tex2D(_VefxLowResFront,uv-o); if(g.a>f.a) f=g;
                 g=tex2D(_VefxLowResFront,uv+float2(o.x,-o.y)); if(g.a>f.a) f=g;
                 g=tex2D(_VefxLowResFront,uv+float2(-o.x,o.y)); if(g.a>f.a) f=g;
-                if(f.a<0.05) return 0;
-                float eye=f.r/f.a;
+                if(f.a<0.05) return 1;
+                float through=saturate(tex2Dlod(scattererReconstructedCloud,float4(uv,0,0)).a);
+                if(through>0.995) return 1;
                 float3 ray=lerp(lerp(_VefxFrustum[0].xyz,_VefxFrustum[3].xyz,uv.x),lerp(_VefxFrustum[1].xyz,_VefxFrustum[2].xyz,uv.x),uv.y);
-                float3 p=_VefxEye.xyz+ray*eye;
-                float ha=length(_VefxEye.xyz-_VefxPlanet.xyz)-_VefxPlanet.w, hb=length(p-_VefxPlanet.xyz)-_VefxPlanet.w;
-                float between=max(Between(ha,hb,_VefxCloudBands.xy,_VefxCloudTops.x),Between(ha,hb,_VefxCloudBands.zw,_VefxCloudTops.y));
-                if(between<=0) return 0;
-                // How much the clouds covered this pixel (the overlay queue's change: a cloud over the land or the sky
-                // changes it a lot).
-                // (averaged over a few pixels and only a clear change: a faint, square particle of another mod's
-                // clouds cut a dark rectangle out of the explosion)
-                float2 s=_VefxLowResFront_TexelSize.xy*3;
-                float diff=0;
-                [unroll] for(int k=0;k<5;k++)
-                {
-                    float2 o2=k==0?float2(0,0):k==1?float2(s.x,s.y):k==2?float2(-s.x,s.y):k==3?float2(s.x,-s.y):float2(-s.x,-s.y);
-                    diff+=length(tex2D(_VefxAfterAlpha,uv+o2).rgb-tex2D(_VefxPreClouds,uv+o2).rgb);
-                }
-                return between*smoothstep(0.1,0.45,diff/5);
+                float k=max(length(ray),1e-4);
+                float front=clamp(f.r/f.a,0,2e6)*k;
+                // (the sky's depth is the far plane: kept finite)
+                float scene=max(min(LinearEyeDepth(SAMPLE_DEPTH_TEXTURE_LOD(_CameraDepthTexture,float4(uv,0,0))),2e6)*k,front);
+                float R=_VefxPlanetRadius.x, alt=_VefxEyeUp.w;
+                float b=(R+alt)*dot(_VefxEyeUp.xyz,ray/k);
+                float total=InLayers(b,alt,R,scene);
+                if(total<1) return 1;
+                float share=saturate(InLayers(b,alt,R,front)/total);
+                return exp2(share*log2(max(through,1e-3)));
             }
             float4 Volumes(v2f_img i);
             float4 frag(v2f_img i):SV_Target
             {
                 float4 c=Volumes(i);
-                if(_VefxCloudOcc>0.5) c*=1-0.97*CloudCover(i.uv);
+                if(_VefxCloudOcc>0.5) c*=CloudThrough(i.uv);
                 // What the cloud hid of a flame in front of it comes back (the flame was drawn into the image before), where
                 // the flame is nearer than the cloud's front.
                 if(_VefxOverlayOn>0.5)
@@ -108,6 +111,8 @@ Shader "VolumetricExplosionFX/Composite"
         Pass
         {
             // 1.1: the cloud's front into the depth buffer, where it is nearly opaque (drawn before the transparent pass).
+            // VFX Reconfigured 0.11.1: only with a shader bundle that has no FrontDepth shader (FrontDepth.shader does it
+            // at queue 2999 now).
             ZTest LEqual ZWrite On Cull Off ColorMask 0
             CGPROGRAM
             #pragma vertex vert_img

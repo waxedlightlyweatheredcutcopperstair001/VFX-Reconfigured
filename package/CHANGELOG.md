@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.11.1
+- Explosions behind EVE's volumetric clouds are hidden by them again. EVE (the raymarched clouds preview) lays its clouds
+  over the scene at the start of the transparent pass, long before the moment 0.3.x looked for them, so large explosions
+  were always drawn over the clouds. The explosion is now dimmed by EVE's own cloud image (how much light gets through
+  the clouds on each pixel), by the share of that cloud lying in front of it: wholly behind a deck it disappears, inside
+  one it fades with depth, below or in front of the clouds it shows in full. Ground-level fog and rain layers count too.
+  No more full-screen copy of the image for this.
+- With Scatterer: the front of a fireball no longer keeps Scatterer's sky and EVE's clouds from being drawn behind it
+  (its soft edge showed the dark scene behind them). The front now goes into the depth buffer after them.
+- Fixes from a code review:
+  - Time zones from other mods (EffectsApi.TimeScale: Far Future Weaponry's tachyon field) now work. A zone set in
+    LateUpdate was always one frame old when read, and was ignored.
+  - Flames on burning wreckage stop with the rest in photo mode's freeze and in time zones.
+  - Rebuilding the effects (changing a setting such as the number of explosions) no longer leaks the slots' meshes.
+- Shaders changed (Composite; new FrontDepth replaces CloudProbe): rebuild with Unity (`tools/make.py`).
+
 ## 0.11.0
 - A "debris" weapon look for other mods (EffectsApi.SetPartLook; Far Future Weaponry's Tachyon Gun): a part
   destroyed while tagged breaks apart, drawn as its wreckage only, with no fireball, fire or smoke trail. A warhead or an

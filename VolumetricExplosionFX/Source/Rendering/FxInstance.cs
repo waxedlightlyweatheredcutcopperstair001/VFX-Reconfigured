@@ -797,6 +797,15 @@ namespace VolumetricExplosionFX.Rendering
             active=false; flash.enabled=false; lightAllowed=false; LightWanted=0; layout=null;
             Root.SetActive(false); DebrisRoot.SetActive(false);
         }
-        public void Dispose() { UnityEngine.Object.Destroy(Root); UnityEngine.Object.Destroy(DebrisRoot); }
+        public void Dispose()
+        {
+            UnityEngine.Object.Destroy(Root); UnityEngine.Object.Destroy(DebrisRoot);
+            // VFX Reconfigured 0.11.1: the slot's own meshes and ground map (destroying the objects leaves them behind:
+            // about a hundred meshes leaked each time a setting rebuilt the pool).
+            if(scorchMesh!=null) UnityEngine.Object.Destroy(scorchMesh);
+            if(scarMesh!=null) UnityEngine.Object.Destroy(scarMesh);
+            if(waveMesh!=null) UnityEngine.Object.Destroy(waveMesh);
+            if(groundMap!=null) { UnityEngine.Object.Destroy(groundMap); groundMap=null; }
+        }
     }
 }

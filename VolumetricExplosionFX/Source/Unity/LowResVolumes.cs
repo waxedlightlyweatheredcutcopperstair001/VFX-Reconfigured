@@ -18,37 +18,47 @@ namespace VolumetricExplosionFX.Rendering
         static readonly int FrontId=Shader.PropertyToID("_VefxLowResFront");
         static readonly int OverlayId=Shader.PropertyToID("_VefxOverlay"), OverlayOnId=Shader.PropertyToID("_VefxOverlayOn"),
             OverlayZId=Shader.PropertyToID("_VefxOverlayZ");
-        // 1.1: clouds another mod composites in the transparent pass (EVE: overlay queue) were covered by the
-        // volumes laid over the image after it. Where a cloud layer (altitudes, the caller's) lies between the eye and a
-        // volume's front and the clouds covered the pixel, the volume is hidden. (what the clouds covered is the
-        // image just before the overlay queue, grabbed by a probe drawn at Overlay-1, against the image after the
-        // transparent pass: against the image before the whole pass, the atmosphere's haze and our own glare counted as
-        // clouds and the explosions faded over the land.)
-        static readonly int AfterId=Shader.PropertyToID("_VefxAfterAlpha"),
-            CloudOccId=Shader.PropertyToID("_VefxCloudOcc"), CloudBandsId=Shader.PropertyToID("_VefxCloudBands"), CloudTopsId=Shader.PropertyToID("_VefxCloudTops"),
-            PlanetId=Shader.PropertyToID("_VefxPlanet"), EyeId=Shader.PropertyToID("_VefxEye"), FrustumId=Shader.PropertyToID("_VefxFrustum");
-        internal bool CloudOcclusion; internal Vector4 CloudBands, Planet; internal Vector2 CloudTops;   // two layers' lowest and highest altitudes (m); planet centre and radius
+        // 1.1: clouds another mod composites in the transparent pass were covered by the volumes laid over the image after it.
+        // VFX Reconfigured 0.11.1: EVE's raymarched clouds are laid over the scene at queue 2998 from an image of their own,
+        // published for Scatterer as the global texture "scattererReconstructedCloud" (alpha: the light that gets through
+        // the clouds on that pixel). The composite dims each volume by the part of that cloud lying in front of the volume's
+        // front: the share of the ray's length inside the cloud layers (altitudes, the caller's) before the front, against
+        // up to the scene's depth (Beer-Lambert: light through = alpha ^ share). (1.1-0.11.0 compared the image before and
+        // after a probe drawn at Overlay-1; EVE's clouds are drawn long before that, so nothing was ever hidden.)
+        static readonly int CloudOccId=Shader.PropertyToID("_VefxCloudOcc"), CloudLoId=Shader.PropertyToID("_VefxCloudLo"), CloudHiId=Shader.PropertyToID("_VefxCloudHi"),
+            EyeUpId=Shader.PropertyToID("_VefxEyeUp"), PlanetRadiusId=Shader.PropertyToID("_VefxPlanetRadius"), FrustumId=Shader.PropertyToID("_VefxFrustum");
+        internal bool CloudOcclusion; internal Vector4 CloudLo, CloudHi, EyeUp;   // layers' bottoms and tops (m); EyeUp: up at the eye (xyz), the eye's altitude (w, m)
+        internal float PlanetRadius;
         readonly Vector3[] corners=new Vector3[4]; Matrix4x4 frustum;
-        internal Material ProbeMaterial;   // VolumetricExplosionFX/CloudProbe (none: no hiding behind clouds)
-        GameObject probe; Mesh probeMesh; Renderer probeRenderer;
-        // The probe is drawn only by the camera whose volumes are hidden behind clouds (the grab is once a frame).
-        internal void ShowProbe(Camera cam,bool on)
+        // VFX Reconfigured 0.11.1: the clouds' front goes into the depth buffer at queue 2999, by a renderer (no camera event
+        // lies there): after Scatterer's sky and EVE's clouds (2998), before the transparent things it hides (3000 on).
+        // Written before the transparent pass (1.1), it kept the sky and the clouds from being drawn behind the fireball's
+        // front, and the fireball's soft edge showed the dark scene behind them. Without the material (an old shader
+        // bundle): written before the transparent pass as before.
+        internal Material FrontDepthMaterial;   // VolumetricExplosionFX/FrontDepth
+        GameObject frontDepth; Mesh frontDepthMesh; Renderer frontDepthRenderer;
+        // Drawn only by the camera whose volumes wrote a front this frame.
+        void ShowFrontDepth(Camera cam,bool on)
         {
-            if(ProbeMaterial==null) return;
-            if(probe==null)
+            if(FrontDepthMaterial==null) return;
+            if(frontDepth==null)
             {
                 if(!on) return;
-                probe=new GameObject("VEFX cloud probe"); probe.layer=EffectLayer.Value;
-                probeMesh=new Mesh { name="VEFX cloud probe" };
-                probeMesh.vertices=new[]{Vector3.zero,Vector3.right,Vector3.up}; probeMesh.triangles=new[]{0,1,2};
-                probeMesh.bounds=new Bounds(Vector3.zero,Vector3.one*2e7f);   // never culled
-                probe.AddComponent<MeshFilter>().sharedMesh=probeMesh;
-                probeRenderer=probe.AddComponent<MeshRenderer>(); probeRenderer.sharedMaterial=ProbeMaterial;
-                probeRenderer.shadowCastingMode=ShadowCastingMode.Off; probeRenderer.receiveShadows=false;
+                frontDepth=new GameObject("VEFX front depth"); frontDepth.layer=EffectLayer.Value;
+                frontDepthMesh=new Mesh { name="VEFX front depth" };
+                // A triangle over the whole view (the shader places it in view space, in front of the near plane).
+                frontDepthMesh.vertices=new[]{new Vector3(-1,-1,0),new Vector3(3,-1,0),new Vector3(-1,3,0)}; frontDepthMesh.triangles=new[]{0,1,2};
+                frontDepthMesh.bounds=new Bounds(Vector3.zero,Vector3.one*2e7f);   // never culled
+                frontDepth.AddComponent<MeshFilter>().sharedMesh=frontDepthMesh;
+                frontDepthRenderer=frontDepth.AddComponent<MeshRenderer>(); frontDepthRenderer.sharedMaterial=FrontDepthMaterial;
+                frontDepthRenderer.shadowCastingMode=ShadowCastingMode.Off; frontDepthRenderer.receiveShadows=false;
+                FrontDepthMaterial.renderQueue=2999;
             }
-            probeRenderer.enabled=on;
-            if(on&&cam!=null) probe.transform.position=cam.transform.position;
+            frontDepthRenderer.enabled=on;
+            if(on&&cam!=null) frontDepth.transform.position=cam.transform.position;
         }
+        // Another camera (not the flight camera) is about to render: nothing of ours in its depth.
+        internal void HideFrontDepth() { ShowFrontDepth(null,false); }
         const CameraEvent MarchEvent=CameraEvent.BeforeForwardAlpha, CompositeEvent=CameraEvent.AfterForwardAlpha;
         readonly Material composite;
         readonly Camera[] cameras=new Camera[4];
@@ -61,6 +71,7 @@ namespace VolumetricExplosionFX.Rendering
         readonly RenderTargetIdentifier[] mrt=new RenderTargetIdentifier[2];
         int count, divisor=2;
         Vector3 eye, eyeForward;
+        Camera camera;   // the camera whose buffers are being filled
         // Volumes collected for this camera, drawn farthest first so nearer explosions cover farther ones.
         const int Capacity=64;
         readonly Mesh[] meshes=new Mesh[Capacity];
@@ -85,7 +96,7 @@ namespace VolumetricExplosionFX.Rendering
         // 1 = full resolution, used only to smooth the ray-march dither of the 1.1 fireball).
         internal void Begin(Camera cam,int resolutionDivisor)
         {
-            current=null; after=null; count=0; divisor=Mathf.Clamp(resolutionDivisor,1,4);
+            current=null; after=null; count=0; divisor=Mathf.Clamp(resolutionDivisor,1,4); camera=cam;
             if(composite==null||cam==null) return;
             eye=cam.transform.position; eyeForward=cam.transform.forward;
             int slot=-1, free=-1;
@@ -113,7 +124,7 @@ namespace VolumetricExplosionFX.Rendering
                 Free(images[slot]); images[slot]=null; Free(frontImages[slot]); frontImages[slot]=null;
                 image=null; frontImage=null; current=null; after=null; return;
             }
-            occluding=CloudOcclusion&&ProbeMaterial!=null;
+            occluding=CloudOcclusion;
             if(occluding)
             {
                 // World rays through the screen's corners, one unit of eye depth long (bottom-left, top-left, top-right, bottom-right).
@@ -173,16 +184,15 @@ namespace VolumetricExplosionFX.Rendering
                 if(any)
                 {
                     current.SetGlobalTexture(FrontId,frontImage);
-                    current.Blit(image,BuiltinRenderTextureType.CameraTarget,composite,1);
+                    if(FrontDepthMaterial==null) current.Blit(image,BuiltinRenderTextureType.CameraTarget,composite,1);
                 }
+                ShowFrontDepth(camera,any);
                 // ---- after the transparent pass: engine flames in front of the clouds, then the composite ----
                 if(occlude)
                 {
-                    // (full size, as the probe's grab: at another size the land's fine detail differed and read as cloud)
-                    after.GetTemporaryRT(AfterId,-1,-1,0,FilterMode.Bilinear,RenderTextureFormat.ARGBHalf);
-                    after.Blit(BuiltinRenderTextureType.CameraTarget,AfterId);
-                    after.SetGlobalVector(CloudBandsId,CloudBands); after.SetGlobalVector(CloudTopsId,CloudTops); after.SetGlobalVector(PlanetId,Planet);
-                    after.SetGlobalVector(EyeId,eye); after.SetGlobalMatrix(FrustumId,frustum);
+                    after.SetGlobalVector(CloudLoId,CloudLo); after.SetGlobalVector(CloudHiId,CloudHi);
+                    after.SetGlobalVector(EyeUpId,EyeUp); after.SetGlobalVector(PlanetRadiusId,new Vector4(PlanetRadius,0,0,0));
+                    after.SetGlobalMatrix(FrustumId,frustum);
                 }
                 after.SetGlobalFloat(CloudOccId,occlude?1:0);
                 bool overlay=false;
@@ -219,11 +229,11 @@ namespace VolumetricExplosionFX.Rendering
                 after.SetGlobalFloat(SpreadId,divisor==1?1.25f:0.6f);
                 after.Blit(image,BuiltinRenderTextureType.CameraTarget,composite,0);
                 if(overlay) { after.ReleaseTemporaryRT(OverlayId); after.ReleaseTemporaryRT(OverlayZId); }
-                if(occlude) after.ReleaseTemporaryRT(AfterId);
             }
+            else ShowFrontDepth(null,false);
             for(int i=0;i<count;i++) { meshes[i]=null; materials[i]=null; blocks[i]=null; }
             overlayMaterials.Clear();
-            current=null; after=null; count=0;
+            current=null; after=null; count=0; camera=null;
         }
         void Detach(int i)
         {
@@ -246,8 +256,8 @@ namespace VolumetricExplosionFX.Rendering
         public void Dispose()
         {
             for(int i=0;i<cameras.Length;i++) Detach(i); current=null; after=null;
-            if(probe!=null) { if(Application.isPlaying) UnityEngine.Object.Destroy(probe); else UnityEngine.Object.DestroyImmediate(probe); probe=null; }
-            if(probeMesh!=null) { if(Application.isPlaying) UnityEngine.Object.Destroy(probeMesh); else UnityEngine.Object.DestroyImmediate(probeMesh); probeMesh=null; }
+            if(frontDepth!=null) { if(Application.isPlaying) UnityEngine.Object.Destroy(frontDepth); else UnityEngine.Object.DestroyImmediate(frontDepth); frontDepth=null; }
+            if(frontDepthMesh!=null) { if(Application.isPlaying) UnityEngine.Object.Destroy(frontDepthMesh); else UnityEngine.Object.DestroyImmediate(frontDepthMesh); frontDepthMesh=null; }
         }
     }
 }

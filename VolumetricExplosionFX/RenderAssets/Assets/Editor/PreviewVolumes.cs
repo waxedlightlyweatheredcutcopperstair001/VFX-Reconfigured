@@ -84,7 +84,7 @@ public static class PreviewVolumes
         public GameObject Glare; public Material GlareMaterial;
         public GameObject Splash; public Material SplashMaterial; public MaterialPropertyBlock SplashBlock;   // 1.1: a water splash's volume // 1.1: a nuclear fireball's glare, anchored in the world
         public Light Sun, Flash, Lamp;
-        public LowResVolumes LowRes; public GameObject Deck;
+        public LowResVolumes LowRes; public GameObject Deck; public Texture2D DeckImage;
         public GameObject NukeShadow; public Material NukeShadowMaterial;   // the nuclear cloud's shadow on the (flat) ground
         public System.Collections.Generic.List<Renderer> Plumes=new System.Collections.Generic.List<Renderer>();   // VEFX_BENCH_PLUME
         readonly List<UnityEngine.Object> owned=new List<UnityEngine.Object>();
@@ -201,25 +201,28 @@ public static class PreviewVolumes
     {
         int divisor;
         if(!int.TryParse(Environment.GetEnvironmentVariable("VEFX_PREVIEW_HALF"),out divisor)||divisor<1||b.Volume==null) return;
-        if(b.LowRes==null) { b.LowRes=new LowResVolumes(b.Own(new Material(Load("Composite",true)))); Shader probe=Load("CloudProbe",false); if(probe!=null) b.LowRes.ProbeMaterial=b.Own(new Material(probe)); }
+        if(b.LowRes==null) { b.LowRes=new LowResVolumes(b.Own(new Material(Load("Composite",true)))); Shader front=Load("FrontDepth",false); if(front!=null) b.LowRes.FrontDepthMaterial=b.Own(new Material(front)); }
         b.Volume.GetComponent<Renderer>().enabled=false;
         bool show=b.Volume.activeSelf;
         b.LowRes.Overlays=Environment.GetEnvironmentVariable("VEFX_BENCH_NOOVERLAY")!=null?null:b.Plumes;   // (VEFX_BENCH_NOOVERLAY: the flames are not drawn again over the clouds)
-        // VEFX_BENCH_CLOUDDECK=altitude (m): a white, see-through cloud deck drawn in the transparent pass, as EVE's
-        // are; the volumes must be hidden where it lies between the eye and them (flat world: the planet's centre far below).
+        // VEFX_BENCH_CLOUDDECK=altitude (m): a white, see-through cloud deck drawn at the start of the transparent pass, as
+        // EVE's are (queue 2998), with EVE's cloud image stood in for by one texel (15% of the light gets through); the
+        // volumes must be hidden where it lies between the eye and them (flat world: the planet's centre far below).
         float deck;
         if(float.TryParse(Environment.GetEnvironmentVariable("VEFX_BENCH_CLOUDDECK"),System.Globalization.NumberStyles.Float,System.Globalization.CultureInfo.InvariantCulture,out deck))
         {
             if(b.Deck==null)
             {
                 b.Deck=b.Own(GameObject.CreatePrimitive(PrimitiveType.Quad)); UnityEngine.Object.DestroyImmediate(b.Deck.GetComponent<Collider>());
-                var mat=b.Own(new Material(Shader.Find("Sprites/Default"))); mat.color=new Color(0.95f,0.95f,0.97f,0.85f); int dq; mat.renderQueue=int.TryParse(Environment.GetEnvironmentVariable("VEFX_BENCH_DECKQUEUE"),out dq)?dq:4000;   // (3000: like the haze of the transparent pass, which must not hide anything)
+                var mat=b.Own(new Material(Shader.Find("Sprites/Default"))); mat.color=new Color(0.95f,0.95f,0.97f,0.85f); int dq; mat.renderQueue=int.TryParse(Environment.GetEnvironmentVariable("VEFX_BENCH_DECKQUEUE"),out dq)?dq:2998;
                 b.Deck.GetComponent<Renderer>().sharedMaterial=mat;
                 b.Deck.transform.rotation=Quaternion.Euler(90,0,0); b.Deck.transform.localScale=new Vector3(60000,60000,1);
             }
             b.Deck.transform.position=new Vector3(0,deck,0);
-            b.LowRes.CloudOcclusion=true; b.LowRes.CloudBands=new Vector4(deck-150,deck+150,0,0); b.LowRes.Planet=new Vector4(0,-6e5f,0,6e5f);
-            b.LowRes.ShowProbe(b.Camera,true);
+            if(b.DeckImage==null) { b.DeckImage=b.Own(new Texture2D(1,1,TextureFormat.RGBAHalf,false)); b.DeckImage.SetPixel(0,0,new Color(0.8f,0.8f,0.8f,0.15f)); b.DeckImage.Apply(); }
+            Shader.SetGlobalTexture("scattererReconstructedCloud",b.DeckImage);
+            b.LowRes.CloudOcclusion=true; b.LowRes.CloudLo=new Vector4(deck-150,0,0,0); b.LowRes.CloudHi=new Vector4(deck+150,0,0,0);
+            b.LowRes.EyeUp=new Vector4(0,1,0,b.Camera.transform.position.y); b.LowRes.PlanetRadius=6e5f;
         }
         b.LowRes.Begin(b.Camera,divisor);
         if(show) b.LowRes.Add(b.Volume.GetComponent<MeshFilter>().sharedMesh,b.Volume.transform.localToWorldMatrix,b.Volume.GetComponent<Renderer>().sharedMaterial,null);

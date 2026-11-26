@@ -38,10 +38,13 @@ namespace VolumetricExplosionFX.Rendering
             internal Material[] Skins;
             internal bool Active, Inertial; internal float Age, End;
             internal float Zone=1;   // VFX Reconfigured: the time-zone scale last applied to its particles (EffectsApi.TimeScale)
+            internal float Lag, LagApplied;   // VFX Reconfigured 0.11.1: time missed while slowed or stopped, for the flame sheets' _FxLag
             internal CelestialBody Body; internal double Latitude, Longitude, Altitude; internal Vector3d Velocity;
             internal int Pieces;
         }
         static readonly Quat Identity=new Quat(0,0,0,1);
+        static readonly int FxLagId=Shader.PropertyToID("_FxLag");
+        static readonly MaterialPropertyBlock lagBlock=new MaterialPropertyBlock();
         static readonly int AgeId=Shader.PropertyToID("_Age"), GravityId=Shader.PropertyToID("_Gravity"),
             LifeId=Shader.PropertyToID("_Life"), CoolId=Shader.PropertyToID("_Cool");
         const int MaxInFlight=2, MaxQueued=48;
@@ -168,7 +171,7 @@ namespace VolumetricExplosionFX.Rendering
             try { Queue<Job> done=job.Finished; lock(done) done.Enqueue(job); }
             catch(Exception) { }
         }
-        internal void Tick(float dt,Camera cam)
+        internal void Tick(float dt,Camera cam,float rawDt)
         {
             // Placing finished wreckage (ground probes, mesh upload) is spread over frames: at most ~4 ms a frame, the rest
             // waits in the queue (a crash breaking twenty parts at once otherwise cost one 30 ms frame).
@@ -217,6 +220,14 @@ namespace VolumetricExplosionFX.Rendering
                 if(Mathf.Abs(zone-b.Zone)>0.01f||zone==0&&b.Zone!=0||zone==1&&b.Zone!=1) { b.Zone=zone; FxPool.Speed(b.Root,photoSpeed*zone); }
                 float bdt=dt*zone;
                 b.Age+=bdt;
+                // (the flame sheets flicker on _Time.y - _FxLag, like an explosion's: they stop in photo mode and in zones too)
+                b.Lag+=rawDt*(1-photoSpeed*zone);
+                if(b.Flames!=null&&Mathf.Abs(b.Lag-b.LagApplied)>=1e-4f)
+                {
+                    b.LagApplied=b.Lag;
+                    var r=b.Flames.GetComponent<ParticleSystemRenderer>();
+                    if(r!=null) { r.GetPropertyBlock(lagBlock); lagBlock.SetFloat(FxLagId,b.Lag); r.SetPropertyBlock(lagBlock); }
+                }
                 if(b.Inertial) b.Root.transform.position+=(Vector3)((b.Velocity*zone-Krakensbane.GetFrameVelocity())*dt);
                 else if(b.Body!=null) b.Root.transform.position=(Vector3)b.Body.GetWorldSurfacePosition(b.Latitude,b.Longitude,b.Altitude);
                 b.Properties.SetFloat(AgeId,b.Age); b.Renderer.SetPropertyBlock(b.Properties);
@@ -244,7 +255,7 @@ namespace VolumetricExplosionFX.Rendering
             b.Inertial=job.Inertial; b.Velocity=job.InertialVelocity; b.Body=job.Body;
             b.Latitude=job.Latitude; b.Longitude=job.Longitude; b.Altitude=job.Altitude;
             float life=job.Inertial?Mathf.Min((float)settings.ResidueSeconds,30):(float)settings.ResidueSeconds;
-            b.End=Mathf.Max(life,8); b.Age=age; b.Pieces=job.Cut.Count;
+            b.End=Mathf.Max(life,8); b.Age=age; b.Pieces=job.Cut.Count; b.Lag=0; b.LagApplied=-1;
             if(b.Zone!=1) { b.Zone=1; FxPool.Speed(b.Root,photoSpeed); }
             b.Properties.Clear();
             b.Properties.SetFloat(AgeId,age); b.Properties.SetFloat(GravityId,(float)job.Gravity);

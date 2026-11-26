@@ -8,7 +8,7 @@ namespace VolumetricExplosionFX.Rendering
     internal sealed class VolumeAssets : IDisposable
     {
         internal Material Material, FlareMaterial, DistortMaterial, CompositeMaterial;
-        internal Material CloudProbeMaterial;   // 1.1: grabs the image before EVE's clouds (LowResVolumes)
+        internal Material FrontDepthMaterial;   // VFX Reconfigured 0.11.1: the clouds' front into the depth buffer at queue 2999 (LowResVolumes)
         internal Material NukeShadow;           // 1.1: the nuclear cloud's shadow, laid from the scene's depth
         // The same volume shader compiled with VEFX_SIM: 1.1 fireballs from the baked simulation (null when not loaded).
         internal Material SimMaterial;   // 1.1 variant: simulated fireball (VEFX_SIM)
@@ -23,7 +23,7 @@ namespace VolumetricExplosionFX.Rendering
         internal Shader Fragment;
         internal Mesh Cube, Quad;
         internal Shader Particle, Debris;
-        Shader ownedShader, ownedFlare, ownedDistort, ownedSmoke, ownedScorch, ownedShadow, ownedWave, ownedTrail, ownedFlame, ownedFire, ownedComposite, ownedNuke, ownedGlare, ownedProbe, ownedNukeShadow, ownedSplash;
+        Shader ownedShader, ownedFlare, ownedDistort, ownedSmoke, ownedScorch, ownedShadow, ownedWave, ownedTrail, ownedFlame, ownedFire, ownedComposite, ownedNuke, ownedGlare, ownedFrontDepth, ownedNukeShadow, ownedSplash;
         Texture2D smokeA, smokeB;
         Texture3D noise, simGround, simAir;
         Texture3D[] simRuns;   // the extra baked runs (ground 2-4, air 2), destroyed with the rest
@@ -124,8 +124,8 @@ namespace VolumetricExplosionFX.Rendering
                 if(lens!=null) { ownedLens=lens; LensMaterial=new Material(lens); }
                 Shader tint=Supported(bundle,"Assets/Shaders/TintSphere.shader");
                 if(tint!=null) { ownedTintSphere=tint; TintSphereMaterial=new Material(tint); }
-                Shader probe=Supported(bundle,"Assets/Shaders/CloudProbe.shader");
-                if(probe!=null) { CloudProbeMaterial=new Material(probe); ownedProbe=probe; }
+                Shader frontDepth=Supported(bundle,"Assets/Shaders/FrontDepth.shader");
+                if(frontDepth!=null) { FrontDepthMaterial=new Material(frontDepth); ownedFrontDepth=frontDepth; }
                 Shader nuke=Supported(bundle,"Assets/Shaders/NukeVolume.shader");
                 if(nuke!=null)
                 {
@@ -261,7 +261,7 @@ namespace VolumetricExplosionFX.Rendering
             if(NukeGlareMaterial!=null) UnityEngine.Object.Destroy(NukeGlareMaterial); if(ownedGlare!=null) UnityEngine.Object.Destroy(ownedGlare);
             if(DistortMaterial!=null) UnityEngine.Object.Destroy(DistortMaterial); if(ownedDistort!=null) UnityEngine.Object.Destroy(ownedDistort);
             if(CompositeMaterial!=null) UnityEngine.Object.Destroy(CompositeMaterial); if(ownedComposite!=null) UnityEngine.Object.Destroy(ownedComposite);
-            if(CloudProbeMaterial!=null) UnityEngine.Object.Destroy(CloudProbeMaterial); if(ownedProbe!=null) UnityEngine.Object.Destroy(ownedProbe);
+            if(FrontDepthMaterial!=null) UnityEngine.Object.Destroy(FrontDepthMaterial); if(ownedFrontDepth!=null) UnityEngine.Object.Destroy(ownedFrontDepth);
             if(NukeShadow!=null) UnityEngine.Object.Destroy(NukeShadow); if(ownedNukeShadow!=null) UnityEngine.Object.Destroy(ownedNukeShadow);
             if(ownedShader!=null) UnityEngine.Object.Destroy(ownedShader); if(ownedFlare!=null) UnityEngine.Object.Destroy(ownedFlare);
             if(SmokeFire!=null) UnityEngine.Object.Destroy(SmokeFire); if(SmokeCloud!=null) UnityEngine.Object.Destroy(SmokeCloud);

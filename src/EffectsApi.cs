@@ -101,7 +101,10 @@ namespace VFXReconfigured
         /// <summary>The time scale at a point this frame (1 outside every zone).</summary>
         internal static float ScaleAt(Vector3 at)
         {
-            if (zoneFrame != Time.frameCount) return 1;
+            // (this frame's zones, or last frame's: a caller registering in LateUpdate, as Far Future Weaponry does, or in
+            // an Update that runs after ours, is read by FlightController.Update in the next frame; 0.11.1 fix: that
+            // zone was always a frame old and never applied)
+            if (Time.frameCount - zoneFrame > 1) return 1;
             float s = 1;
             foreach (Zone z in zones)
                 if ((at - z.Centre).sqrMagnitude <= z.Radius * z.Radius && z.Scale < s) s = z.Scale;

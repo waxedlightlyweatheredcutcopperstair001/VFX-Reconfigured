@@ -4,17 +4,18 @@ using UnityEngine;
 namespace VolumetricExplosionFX.Ksp
 {
     // 1.1: the altitudes of the raymarched cloud layers of Environmental Visual Enhancements over the current body,
-    // read through its public members by reflection (nothing of it is copied, and nothing is called but getters). EVE
-    // composites its clouds in the overlay queue of the transparent pass, before VEFX lays its volumes over the image: a
-    // nuclear cloud seen from above the cloud deck was drawn over it. LowResVolumes hides the volumes where one of these
-    // layers lies between the eye and them and the transparent pass covered the pixel. Nothing without EVE.
+    // read through its public members by reflection (nothing of it is copied, and nothing is called but getters).
+    // VFX Reconfigured 0.11.1: EVE lays its clouds over the scene at render queue 2998 (start of the transparent pass), and
+    // VEFX lays its volumes over the image after the whole pass, so a nuclear cloud behind a cloud deck was drawn over it.
+    // LowResVolumes now hides the volumes with EVE's own cloud image (how much light gets through the clouds on each
+    // pixel) and these layers (how much of the cloud on that ray lies in front of the explosion). Nothing without EVE.
     internal static class CloudLayers
     {
+        internal const int Max=4;
         internal static bool Known { get; private set; }
-        internal static Vector4 Bands { get; private set; }
-        // VFX Reconfigured: the lowest top among the layers merged into each band (x: first band, y: the rest): where most
-        // of a band's cloud is (a cumulus deck under sparse, taller cumulonimbus), for the partial hiding inside a band.
-        internal static Vector2 InnerTops { get; private set; }   // lowest layer's lowest and highest altitude (m), then the next one's
+        // Up to four layers (altitudes, m; overlapping layers merged): bottoms in Lo, tops in Hi, unused ones 0-0.
+        internal static Vector4 Lo { get; private set; }
+        internal static Vector4 Hi { get; private set; }
         static Type cloudsObject; static FieldInfo bodyField, layerField; static PropertyInfo inner, outer, planet;
         static bool searched, failed; static float nextScan; static string scannedBody, logged;
         internal static void Refresh(CelestialBody body)
@@ -35,36 +36,34 @@ namespace VolumetricExplosionFX.Ksp
                     object layer=layerField.GetValue(objects[i]);
                     if(layer==null) continue;
                     float r=(float)planet.GetValue(layer,null), a=(float)inner.GetValue(layer,null)-r, b=(float)outer.GetValue(layer,null)-r;
-                    // Real cloud decks only: the weather layers reaching the ground (rain, fog, snow: -20 to 2150 m
-                    // over Kerbin) and very tall ones (one reached 80 km) made a band from the ground to space, so every
-                    // explosion counted as under the clouds.
-                    if(r>0&&b>a&&a>=300&&b-a<=20000&&b<=30000) layers.Add(new Vector2(a,b)); else skipped++;
+                    // Ground-level weather (fog, rain: -20 to 2150 m over Kerbin) is kept now: EVE's image says where it
+                    // really is. Very tall layers (one reached 80 km) are not: the share of a ray's cloud in front of an
+                    // explosion is taken from the ray's length inside the layers, and a mostly empty 80 km shell would swamp it.
+                    if(r>0&&b>a&&b-a<=20000&&b<=30000) layers.Add(new Vector2(a,b)); else skipped++;
                     all+=(all.Length>0?", ":"")+a.ToString("0")+"-"+b.ToString("0")+" m";
                 }
-                // Layers that touch are one; two bands at most: the lowest, and everything above it (the cumulonimbus tops).
+                // Overlapping layers are one (their length would count twice); then the closest are merged down to four.
                 layers.Sort((x,y)=>x.x.CompareTo(y.x));
-                var merged=new System.Collections.Generic.List<Vector2>(); var tops=new System.Collections.Generic.List<float>();
+                var merged=new System.Collections.Generic.List<Vector2>();
                 foreach(Vector2 l in layers)
                 {
-                    if(merged.Count>0&&l.x<=merged[merged.Count-1].y+300)
-                    {
-                        merged[merged.Count-1]=new Vector2(merged[merged.Count-1].x,Mathf.Max(merged[merged.Count-1].y,l.y));
-                        tops[tops.Count-1]=Mathf.Min(tops[tops.Count-1],l.y);
-                    }
-                    else { merged.Add(l); tops.Add(l.y); }
+                    if(merged.Count>0&&l.x<=merged[merged.Count-1].y) merged[merged.Count-1]=new Vector2(merged[merged.Count-1].x,Mathf.Max(merged[merged.Count-1].y,l.y));
+                    else merged.Add(l);
+                }
+                while(merged.Count>Max)
+                {
+                    int k=0; float gap=float.MaxValue;
+                    for(int i=0;i+1<merged.Count;i++) if(merged[i+1].x-merged[i].y<gap) { gap=merged[i+1].x-merged[i].y; k=i; }
+                    merged[k]=new Vector2(merged[k].x,Mathf.Max(merged[k].y,merged[k+1].y)); merged.RemoveAt(k+1);
                 }
                 Known=merged.Count>0;
-                float lo0=Known?merged[0].x:0, hi0=Known?merged[0].y:0, lo1=float.MaxValue, hi1=0;
-                for(int i=1;i<merged.Count;i++) { lo1=Mathf.Min(lo1,merged[i].x); hi1=Mathf.Max(hi1,merged[i].y); }
-                float top1=float.MaxValue; for(int i=1;i<tops.Count;i++) top1=Mathf.Min(top1,tops[i]);
-                InnerTops=Known?new Vector2(tops[0],top1<float.MaxValue?top1:0):Vector2.zero;
-                Bands=Known?new Vector4(lo0,hi0,lo1<float.MaxValue?lo1:0,lo1<float.MaxValue?hi1:0):Vector4.zero;
-                string text=Known?body.bodyName+" "+lo0.ToString("0")+"-"+hi0.ToString("0")+" m"+(lo1<float.MaxValue?", "+lo1.ToString("0")+"-"+hi1.ToString("0")+" m":""):null;
-                if(text==null&&skipped>0) text=body.bodyName+" none used";
-                if(text!=null) text+=skipped>0?" ("+skipped+" ground-level or very tall layer(s) not used)":"";
-                if(text==null) text=body.bodyName+" none found ("+objects.Length+" EVE cloud object(s) in the scene)";
+                Vector4 lo=Vector4.zero, hi=Vector4.zero; string text="";
+                for(int i=0;i<merged.Count;i++) { lo[i]=merged[i].x; hi[i]=merged[i].y; text+=(i>0?", ":"")+merged[i].x.ToString("0")+"-"+merged[i].y.ToString("0")+" m"; }
+                Lo=lo; Hi=hi;
+                text=Known?body.bodyName+" "+text:objects.Length>0&&skipped>0?body.bodyName+" none used":body.bodyName+" none found ("+objects.Length+" EVE cloud object(s) in the scene)";
+                if(skipped>0) text+=" ("+skipped+" very tall layer(s) not used)";
                 text+="; every layer: "+(all.Length>0?all:"none");
-                if(text!=null&&text!=logged) { logged=text; Debug.Log("[VEFX] Cloud layers (EVE): "+text+": explosions are hidden behind these layers (and partly within them)"); }
+                if(text!=logged) { logged=text; Debug.Log("[VEFX] Cloud layers (EVE): "+text+(Known?": explosions behind EVE's clouds in these layers are hidden by them":"")); }
             }
             catch(Exception ex)
             {
@@ -72,8 +71,7 @@ namespace VolumetricExplosionFX.Ksp
                 Debug.LogWarning("[VEFX] Cloud layers unreadable ("+ex.GetType().Name+"): explosions are drawn over the clouds");
             }
         }
-        // VFX Reconfigured: when the clouds are drawn relative to the volumes decides whether the hiding can work (the probe
-        // grabs the image at Overlay-1; clouds drawn earlier leave nothing to compare): logged once, with the render stack.
+        // VFX Reconfigured: when the clouds are drawn (EVE's composite material and its queue), logged once, with the render stack.
         static bool reportedDraw;
         static void ReportCloudDraw()
         {

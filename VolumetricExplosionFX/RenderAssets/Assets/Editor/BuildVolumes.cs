@@ -55,8 +55,8 @@ public static class BuildVolumes
             if(composite==null || ShaderUtil.ShaderHasError(composite)) throw new Exception("Composite shader import failed.");
             Shader nukeShadow=AssetDatabase.LoadAssetAtPath<Shader>("Assets/Shaders/NukeShadow.shader");
             if(nukeShadow==null || ShaderUtil.ShaderHasError(nukeShadow)) throw new Exception("Nuclear shadow shader import failed.");
-            Shader cloudProbe=AssetDatabase.LoadAssetAtPath<Shader>("Assets/Shaders/CloudProbe.shader");
-            if(cloudProbe==null || ShaderUtil.ShaderHasError(cloudProbe)) throw new Exception("Cloud probe shader import failed.");
+            Shader frontDepth=AssetDatabase.LoadAssetAtPath<Shader>("Assets/Shaders/FrontDepth.shader");
+            if(frontDepth==null || ShaderUtil.ShaderHasError(frontDepth)) throw new Exception("Front depth shader import failed.");
             Shader nukeGlare=AssetDatabase.LoadAssetAtPath<Shader>("Assets/Shaders/NukeGlare.shader");
             if(nukeGlare==null || ShaderUtil.ShaderHasError(nukeGlare)) throw new Exception("Nuclear glare shader import failed.");
             // VFX Reconfigured: exotic fuel explosions (antimatter, Graviolium).
@@ -76,10 +76,10 @@ public static class BuildVolumes
             Directory.CreateDirectory(output);
             var bundle=new AssetBundleBuild { assetBundleName="vefx-"+platform+".unity3d",
                 assetNames=new[]{"Assets/Shaders/HeroVolume.shader","Assets/Shaders/HeroFlare.shader","Assets/Shaders/Particle.shader","Assets/Shaders/HeatDistortion.shader","Assets/Shaders/Debris.shader",NoiseTexture.AssetPath,
-                    "Assets/Shaders/Smoke.shader","Assets/Shaders/PartFragment.shader","Assets/Shaders/Scorch.shader","Assets/Shaders/SmokeShadow.shader","Assets/Shaders/GroundWave.shader","Assets/Shaders/Trail.shader","Assets/Shaders/Flame.shader","Assets/Shaders/FireVolume.shader","Assets/Shaders/Composite.shader","Assets/Shaders/NukeVolume.shader","Assets/Shaders/NukeGlare.shader","Assets/Shaders/CloudProbe.shader","Assets/Shaders/NukeShadow.shader","Assets/Shaders/SplashVolume.shader","Assets/Shaders/ExoticGlow.shader","Assets/Shaders/GravLens.shader","Assets/Shaders/TintSphere.shader",SmokeFlipbook.PathA,SmokeFlipbook.PathB,BlueNoise.AssetPath,FireSimTexture.AssetPath("ground"),FireSimTexture.AssetPath("ground2"),FireSimTexture.AssetPath("ground3"),FireSimTexture.AssetPath("ground4"),FireSimTexture.AssetPath("air"),FireSimTexture.AssetPath("air2"),FireSimTexture.AssetPath("nuke"),FireSimTexture.AssetPath("nuke2"),FireSimTexture.AssetPath("nukeair")} };
+                    "Assets/Shaders/Smoke.shader","Assets/Shaders/PartFragment.shader","Assets/Shaders/Scorch.shader","Assets/Shaders/SmokeShadow.shader","Assets/Shaders/GroundWave.shader","Assets/Shaders/Trail.shader","Assets/Shaders/Flame.shader","Assets/Shaders/FireVolume.shader","Assets/Shaders/Composite.shader","Assets/Shaders/NukeVolume.shader","Assets/Shaders/NukeGlare.shader","Assets/Shaders/FrontDepth.shader","Assets/Shaders/NukeShadow.shader","Assets/Shaders/SplashVolume.shader","Assets/Shaders/ExoticGlow.shader","Assets/Shaders/GravLens.shader","Assets/Shaders/TintSphere.shader",SmokeFlipbook.PathA,SmokeFlipbook.PathB,BlueNoise.AssetPath,FireSimTexture.AssetPath("ground"),FireSimTexture.AssetPath("ground2"),FireSimTexture.AssetPath("ground3"),FireSimTexture.AssetPath("ground4"),FireSimTexture.AssetPath("air"),FireSimTexture.AssetPath("air2"),FireSimTexture.AssetPath("nuke"),FireSimTexture.AssetPath("nuke2"),FireSimTexture.AssetPath("nukeair")} };
             if(BuildPipeline.BuildAssetBundles(output,new[]{bundle},BuildAssetBundleOptions.ForceRebuildAssetBundle|
                 BuildAssetBundleOptions.ChunkBasedCompression,target)==null) throw new Exception("Bundle build failed.");
-            foreach(Shader compiled in new[]{shader,flare,particle,distortion,debris,smoke,fragment,scorch,smokeShadow,groundWave,trail,flame,fire,composite,nukeGlare,cloudProbe,nukeShadow,exoticGlow,gravLens,tintSphere})
+            foreach(Shader compiled in new[]{shader,flare,particle,distortion,debris,smoke,fragment,scorch,smokeShadow,groundWave,trail,flame,fire,composite,nukeGlare,frontDepth,nukeShadow,exoticGlow,gravLens,tintSphere})
                 foreach(var message in ShaderUtil.GetShaderMessages(compiled))
                     if(message.severity==UnityEditor.Rendering.ShaderCompilerMessageSeverity.Error)
                         throw new Exception(compiled.name+": "+message.message);

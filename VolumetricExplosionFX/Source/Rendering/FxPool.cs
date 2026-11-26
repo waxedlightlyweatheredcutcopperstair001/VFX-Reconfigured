@@ -47,7 +47,7 @@ namespace VolumetricExplosionFX.Rendering
             hits=new HitBursts(assets);
             lightning=new Lightning(assets.Glow);
             shake=new CameraShake();
-            if(volumes.CompositeMaterial!=null) lowRes=new LowResVolumes(volumes.CompositeMaterial) { ProbeMaterial=volumes.CloudProbeMaterial };
+            if(volumes.CompositeMaterial!=null) lowRes=new LowResVolumes(volumes.CompositeMaterial) { FrontDepthMaterial=volumes.FrontDepthMaterial };
             try { for(int i=0;i<slots.Length;i++) slots[i]=new FxInstance(i,assets,s,volumes); }
             catch { Dispose();throw; }
             if(slots.Length>0)
@@ -64,7 +64,8 @@ namespace VolumetricExplosionFX.Rendering
         LowResVolumes lowRes;
         // Video memory saver: chosen in the settings, automatic on cards with little memory, or forced by a failed image.
         internal static int VideoMemory { get { return SystemInfo.graphicsMemorySize; } }
-        bool saverCloudLogged;
+        static readonly int EveCloudImageId=Shader.PropertyToID("scattererReconstructedCloud");
+        bool eveImageLogged;
         internal bool SavesMemory { get { return FxSettings.SavesMemory(settings.LowMemory,VideoMemory)||(lowRes!=null&&lowRes.Failures>0); } }
         readonly PlumeOverlays plumes=new PlumeOverlays();   // engine flames drawn again over the clouds in front of them
         void OnPreCull(Camera cam)
@@ -86,18 +87,24 @@ namespace VolumetricExplosionFX.Rendering
                 bool sim=VolumeEvolution.UseSim&&!settings.Looks.UseClassic;
                 // (the saver skips the full-screen copies: flames drawn again over the clouds, the cloud masking)
                 lowRes.Overlays=saver?null:plumes.Renderers; lowRes.OverlayBox=volumes.Cube;
-                // Hidden behind EVE's cloud layers where they lie between the eye and the cloud.
+                // Hidden behind EVE's clouds where they are in front (EVE's own cloud image, published for Scatterer).
                 CelestialBody body=FlightGlobals.currentMainBody;
                 CloudLayers.Refresh(body);
-                lowRes.CloudOcclusion=CloudLayers.Known&&body!=null&&settings.Volumetric&&!saver;
-                if(CloudLayers.Known&&saver&&!saverCloudLogged) { saverCloudLogged=true; Debug.Log("[VFXR] Video memory saver on: explosions are not hidden behind EVE's clouds"); }
-                if(lowRes.CloudOcclusion) { Vector3 c=body.position; lowRes.CloudBands=CloudLayers.Bands; lowRes.CloudTops=CloudLayers.InnerTops; lowRes.Planet=new Vector4(c.x,c.y,c.z,(float)body.Radius); }
-                lowRes.ShowProbe(cam,lowRes.CloudOcclusion);
+                bool eveImage=CloudLayers.Known&&Shader.GetGlobalTexture(EveCloudImageId)!=null;
+                if(CloudLayers.Known&&eveImage!=eveImageLogged) { eveImageLogged=eveImage; Debug.Log("[VFXR] EVE's cloud image (scattererReconstructedCloud) "+(eveImage?"found: explosions behind clouds are hidden by them":"not published (no raymarched clouds drawn yet): explosions are drawn over the clouds")); }
+                lowRes.CloudOcclusion=eveImage&&body!=null&&settings.Volumetric;
+                if(lowRes.CloudOcclusion)
+                {
+                    Vector3d up=(Vector3d)cam.transform.position-body.position; double r=up.magnitude;
+                    up=r>0?up/r:Vector3d.up;
+                    lowRes.CloudLo=CloudLayers.Lo; lowRes.CloudHi=CloudLayers.Hi;
+                    lowRes.EyeUp=new Vector4((float)up.x,(float)up.y,(float)up.z,(float)(r-body.Radius)); lowRes.PlanetRadius=(float)body.Radius;
+                }
                 int divisor=saver?Math.Max(settings.VolumeDivisor,2):settings.VolumeDivisor;
                 lowRes.Begin(cam,VolumeEvolution.MarchDivisor(divisor,sim)); begun=true; // also empties this camera's buffer at full resolution
                 if((divisor>1||sim)&&lowRes.Available) target=lowRes;
             }
-            if(lowRes!=null&&(!flight||!lowRes.Available)) lowRes.ShowProbe(cam,false);   // (the grab is the flight camera's)
+            if(lowRes!=null&&(!flight||!lowRes.Available)) lowRes.HideFrontDepth();   // (the front is the flight camera's)
             for(int i=0;i<slots.Length;i++) if(slots[i]!=null) slots[i].ShowFor(cam,target);
             if(begun) lowRes.End();
             LensPass.PreCull(cam);   // VFX Reconfigured: Graviolium lenses, after the volumes' composite
@@ -397,7 +404,7 @@ namespace VolumetricExplosionFX.Rendering
             long t0=System.Diagnostics.Stopwatch.GetTimestamp();
             if(Active>0||debris.Active>0) PublishLighting(cam);
             long tl=System.Diagnostics.Stopwatch.GetTimestamp();
-            debris.Tick(Mathf.Clamp(dt,0,0.1f),cam);
+            debris.Tick(Mathf.Clamp(dt,0,0.1f),cam,rawDt);
             if(lightning!=null)
             {
                 lightning.Tick(Mathf.Clamp(dt,0,0.1f));
